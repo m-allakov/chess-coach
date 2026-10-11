@@ -219,3 +219,26 @@ def test_trainer_modes_are_validated_and_erred_mode_is_available(client):
 def test_checking_an_answer_returns_the_threat_lens(client):
     r = client.post("/api/trainer/check", json={"id": "1:2", "uci": "d2d4"}).json()
     assert r["after_your_move"]["verdict"] in ("clear", "material", "check", "mate")
+
+
+def test_answers_are_scheduled_on_the_server_and_resting_positions_are_not_offered_again(client):
+    assert client.get("/api/trainer").json()["available"] == 1
+    client.post("/api/trainer/check", json={"id": "1:2", "uci": "d2d4"})        # solved: rests for a day
+    data = client.get("/api/trainer").json()
+    assert data["puzzles"] == [] and data["practice"] == {"positions": 1, "answers": 1, "solved": 1, "mastered": 0}
+
+
+def test_a_missed_position_comes_back_after_the_short_retry(client, monkeypatch):
+    from chess_coach import practice
+    monkeypatch.setattr(practice, "RETRY_MINUTES", 0)
+    client.post("/api/trainer/check", json={"id": "1:2", "uci": "g1f3"})        # inaccurate: not solved
+    assert [p["id"] for p in client.get("/api/trainer").json()["puzzles"]] == ["1:2"]
+
+
+def test_browser_progress_can_be_imported_once(client):
+    body = {"1:2": {"box": 2, "due": 4_000_000_000_000}}
+    assert client.post("/api/practice/import", json=body).json() == {"imported": 1}
+    assert client.post("/api/practice/import", json=body).json() == {"imported": 0}
+    assert client.get("/api/trainer").json()["puzzles"] == []
+    assert client.post("/api/practice/import", json=[1, 2]).status_code == 400
+    assert client.post("/api/practice/import", content=b"nope").status_code == 400

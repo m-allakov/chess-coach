@@ -608,9 +608,17 @@
 
   // ---- chapter VIII: train ----------------------------------------------------------
   const STORE = "chess-coach-train";
-  const INTERVALS_DAYS = [0, 1, 3, 7, 21];   // spacing after 0..4 correct answers in a row
-  function loadProgress() { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } }
-  function saveProgress(p) { try { localStorage.setItem(STORE, JSON.stringify(p)); } catch (e) { /* storage unavailable */ } }
+
+  /** Older versions kept the schedule in this browser. Hand it to the server once, then forget it. */
+  async function adoptBrowserProgress() {
+    let old;
+    try { old = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { return; }
+    if (!old || !Object.keys(old).length) return;
+    try {
+      const res = await fetch(`/api/practice/import?${query()}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(old) });
+      if (res.ok) localStorage.removeItem(STORE);
+    } catch (e) { /* try again next time */ }
+  }
 
   const VERDICT_TEXT = { best: "Best.", good: "Good.", inaccurate: "Inaccurate.", mistake: "A mistake.", blunder: "A blunder." };
   const session = { tried: 0, solved: 0, streak: 0 };
@@ -630,11 +638,9 @@
   }
 
   async function train() {
-    const progress = loadProgress();
-    const now = Date.now();
-    const resting = Object.entries(progress).filter(([, p]) => p.due > now).map(([id]) => id);
+    await adoptBrowserProgress();
     const mode = recall("chess-coach-train-mode") === "erred" ? "erred" : "own";
-    const data = await api("trainer", { fresh: true, query: { n: 15, exclude: resting.join(","), mode } });
+    const data = await api("trainer", { fresh: true, query: { n: 15, mode } });
     const switcher = h("div", { class: "modes", role: "group", "aria-label": "Exercise type" },
       [["own", "My blunders"], ["erred", "After their mistake"]].map(([m, label]) =>
         h("button", { type: "button", class: "mode", "aria-pressed": String(mode === m),
@@ -699,10 +705,6 @@
               (r.after_your_move ? r.after_your_move.hanging : []).map((x) => x.square));
             session.tried += 1;
             if (r.solved) { session.solved += 1; session.streak += 1; } else session.streak = 0;
-            const prog = loadProgress();
-            const box = r.solved ? Math.min(4, ((prog[p.id] || {}).box || 0) + 1) : 0;
-            prog[p.id] = { box, due: Date.now() + (r.solved ? INTERVALS_DAYS[box] * 86400000 : 10 * 60000) };
-            saveProgress(prog);
             const lost = r.win_chance_lost;
             feedback.replaceChildren(
               h("div", { class: `verdict-word ${r.solved ? "ok" : "no"}` }, VERDICT_TEXT[r.verdict] || r.verdict),

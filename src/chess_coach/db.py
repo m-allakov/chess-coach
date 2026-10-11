@@ -49,6 +49,18 @@ CREATE TABLE IF NOT EXISTS game_analysis (
     seconds       REAL NOT NULL,
     analyzed_at   INTEGER NOT NULL
 );
+
+-- Exercise schedule (spaced repetition), one row per player and position.
+CREATE TABLE IF NOT EXISTS practice (
+    username   TEXT NOT NULL,
+    puzzle_id  TEXT NOT NULL,
+    box        INTEGER NOT NULL,
+    due_ms     INTEGER NOT NULL,
+    tried      INTEGER NOT NULL,
+    solved     INTEGER NOT NULL,
+    last_ms    INTEGER NOT NULL,
+    PRIMARY KEY (username, puzzle_id)
+);
 """
 
 

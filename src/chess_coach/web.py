@@ -25,7 +25,7 @@ from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import analysis, coach, opportunities, patterns, peers, reports, timeline, trainer
+from . import analysis, coach, opportunities, patterns, peers, practice, reports, timeline, trainer
 from .config import stockfish_path
 from .db import DEFAULT_DB, connect
 from .moves import my_moves
@@ -70,7 +70,10 @@ def create_app(db_path: str | Path | None = None, default_username: str = "",
                     factory = engine_factory or analysis.default_engine_factory(
                         stockfish_path(), threads=1, hash_mb=64)
                     engine_box["engine"] = factory()
-                return trainer.check(conn, engine_box["engine"], username, pid, uci)
+                result = trainer.check(conn, engine_box["engine"], username, pid, uci)
+            if "error" not in result:
+                practice.record(conn, username, pid, result["solved"])
+            return result
         finally:
             conn.close()
 
@@ -165,7 +168,10 @@ def create_app(db_path: str | Path | None = None, default_username: str = "",
             if mode not in ("own", "erred"):
                 raise HTTPException(400, "mode must be own or erred")
             pick = trainer.erred_puzzles if mode == "erred" else trainer.puzzles
-            return JSONResponse(pick(conn, username, count, time_class, exclude=exclude))
+            exclude |= practice.resting(conn, username)
+            data = pick(conn, username, count, time_class, exclude=exclude)
+            data["practice"] = practice.summary(conn, username)
+            return JSONResponse(data)
         finally:
             conn.close()
 
@@ -178,6 +184,20 @@ def create_app(db_path: str | Path | None = None, default_username: str = "",
         pid, uci = str(body.get("id", "")), str(body.get("uci", ""))
         result = await run_in_threadpool(judge, username, pid, uci)
         return JSONResponse(result, status_code=400 if "error" in result else 200)
+
+    async def practice_import(request: Request) -> JSONResponse:
+        username, _, _ = params(request)
+        try:
+            body = await request.json()
+        except ValueError:
+            raise HTTPException(400, "Body must be JSON")
+        if not isinstance(body, dict):
+            raise HTTPException(400, "Body must be an object of puzzle ids")
+        conn = connect(db)
+        try:
+            return JSONResponse({"imported": practice.import_progress(conn, username, body)})
+        finally:
+            conn.close()
 
     routes = [
         Route("/api/config", lambda request: JSONResponse({"default_username": default_username})),
@@ -199,6 +219,7 @@ def create_app(db_path: str | Path | None = None, default_username: str = "",
         Route("/api/game", game_view),
         Route("/api/trainer", trainer_list),
         Route("/api/trainer/check", trainer_check, methods=["POST"]),
+        Route("/api/practice/import", practice_import, methods=["POST"]),
         Route("/", lambda request: FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})),
         Mount("/static", NoCacheStatic(directory=STATIC), name="static"),
     ]
