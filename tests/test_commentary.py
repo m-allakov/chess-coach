@@ -19,9 +19,11 @@ def test_advice_is_ordered_by_priority_and_names_its_source():
     assert items[0]["text"] and "Looking for Trouble" in items[0]["source"]["title"]
 
 
-def test_a_cause_without_literature_coverage_has_no_advice_yet():
-    assert c.advice_for("time") == []
-    assert c.advice_for("opening") == []
+def test_every_cause_has_advice_with_a_named_source_and_unknown_causes_have_none():
+    for cause in ("time", "thrown_win", "opening", "blunder", "gradual"):
+        items = c.advice_for(cause)
+        assert items and all(i["text"] and i["source"]["author"] for i in items), cause
+    assert c.advice_for("no_such_cause") == []
 
 
 def test_facts_come_only_from_the_plan_and_the_profile():
