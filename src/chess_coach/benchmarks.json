@@ -1,0 +1,214 @@
+{
+ "700-900": {
+  "players": 15,
+  "games_per_player": 30,
+  "time_control": "180",
+  "score_pct": {
+   "n": 15,
+   "p25": 45.0,
+   "median": 46.7,
+   "p75": 56.7
+  },
+  "blunders_per_100_moves": {
+   "n": 15,
+   "p25": 8.5,
+   "median": 9.6,
+   "p75": 10.6
+  },
+  "avg_wp_loss": {
+   "n": 15,
+   "p25": 4.6,
+   "median": 5.0,
+   "p75": 5.6
+  },
+  "lost_on_time_pct_of_games": {
+   "n": 15,
+   "p25": 3.3,
+   "median": 10.0,
+   "p75": 11.1
+  },
+  "winning_positions_not_won_pct": {
+   "n": 15,
+   "p25": 26.3,
+   "median": 36.4,
+   "p75": 45.0
+  },
+  "opening_blunders_per_100": {
+   "n": 15,
+   "p25": 5.0,
+   "median": 6.0,
+   "p75": 9.3
+  },
+  "middlegame_blunders_per_100": {
+   "n": 15,
+   "p25": 11.5,
+   "median": 12.5,
+   "p75": 13.6
+  },
+  "endgame_blunders_per_100": {
+   "n": 15,
+   "p25": 2.6,
+   "median": 3.8,
+   "p75": 5.4
+  }
+ },
+ "1100-1300": {
+  "players": 17,
+  "games_per_player": 30,
+  "time_control": "180",
+  "score_pct": {
+   "n": 17,
+   "p25": 51.7,
+   "median": 53.3,
+   "p75": 59.1
+  },
+  "blunders_per_100_moves": {
+   "n": 17,
+   "p25": 6.9,
+   "median": 7.7,
+   "p75": 8.9
+  },
+  "avg_wp_loss": {
+   "n": 17,
+   "p25": 3.8,
+   "median": 4.2,
+   "p75": 4.8
+  },
+  "lost_on_time_pct_of_games": {
+   "n": 17,
+   "p25": 6.7,
+   "median": 10.0,
+   "p75": 18.4
+  },
+  "winning_positions_not_won_pct": {
+   "n": 17,
+   "p25": 27.4,
+   "median": 39.1,
+   "p75": 41.7
+  },
+  "opening_blunders_per_100": {
+   "n": 17,
+   "p25": 3.6,
+   "median": 5.4,
+   "p75": 6.1
+  },
+  "middlegame_blunders_per_100": {
+   "n": 17,
+   "p25": 9.0,
+   "median": 10.6,
+   "p75": 12.0
+  },
+  "endgame_blunders_per_100": {
+   "n": 17,
+   "p25": 1.7,
+   "median": 3.6,
+   "p75": 4.9
+  }
+ },
+ "1500-1700": {
+  "players": 14,
+  "games_per_player": 30,
+  "time_control": "180",
+  "score_pct": {
+   "n": 14,
+   "p25": 43.3,
+   "median": 45.0,
+   "p75": 54.1
+  },
+  "blunders_per_100_moves": {
+   "n": 14,
+   "p25": 6.9,
+   "median": 7.6,
+   "p75": 8.6
+  },
+  "avg_wp_loss": {
+   "n": 14,
+   "p25": 4.1,
+   "median": 4.4,
+   "p75": 4.6
+  },
+  "lost_on_time_pct_of_games": {
+   "n": 14,
+   "p25": 2.5,
+   "median": 13.3,
+   "p75": 14.2
+  },
+  "winning_positions_not_won_pct": {
+   "n": 14,
+   "p25": 22.3,
+   "median": 38.5,
+   "p75": 42.0
+  },
+  "opening_blunders_per_100": {
+   "n": 14,
+   "p25": 1.9,
+   "median": 3.0,
+   "p75": 4.4
+  },
+  "middlegame_blunders_per_100": {
+   "n": 14,
+   "p25": 9.2,
+   "median": 10.2,
+   "p75": 11.4
+  },
+  "endgame_blunders_per_100": {
+   "n": 14,
+   "p25": 2.2,
+   "median": 4.2,
+   "p75": 5.0
+  }
+ },
+ "1900-2100": {
+  "players": 16,
+  "games_per_player": 30,
+  "time_control": "180",
+  "score_pct": {
+   "n": 16,
+   "p25": 38.7,
+   "median": 48.4,
+   "p75": 57.6
+  },
+  "blunders_per_100_moves": {
+   "n": 16,
+   "p25": 5.5,
+   "median": 6.3,
+   "p75": 7.2
+  },
+  "avg_wp_loss": {
+   "n": 16,
+   "p25": 3.2,
+   "median": 3.7,
+   "p75": 3.9
+  },
+  "lost_on_time_pct_of_games": {
+   "n": 16,
+   "p25": 1.7,
+   "median": 13.3,
+   "p75": 27.5
+  },
+  "winning_positions_not_won_pct": {
+   "n": 16,
+   "p25": 25.0,
+   "median": 33.3,
+   "p75": 51.8
+  },
+  "opening_blunders_per_100": {
+   "n": 16,
+   "p25": 1.0,
+   "median": 1.9,
+   "p75": 2.7
+  },
+  "middlegame_blunders_per_100": {
+   "n": 16,
+   "p25": 8.4,
+   "median": 9.1,
+   "p75": 11.1
+  },
+  "endgame_blunders_per_100": {
+   "n": 16,
+   "p25": 2.3,
+   "median": 2.7,
+   "p75": 4.2
+  }
+ }
+}

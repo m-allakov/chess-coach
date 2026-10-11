@@ -1,0 +1,22 @@
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Personal and third-party data: never publish
+.data/
+*.db
+books/
+books_work/
+
+# Stockfish is GPL-licensed: users download it, it is not committed
+engines/
+
+# Machine-specific files (paths, agent settings)
+.claude/
+.mcp.json
+start_dashboard.bat

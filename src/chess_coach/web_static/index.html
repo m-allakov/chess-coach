@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Chess Coach</title>
+  <script>try { var t = localStorage.getItem("chess-coach-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <a class="skip" href="#view">Skip to content</a>
+
+  <header class="masthead">
+    <div class="theme" role="group" aria-label="Colour theme">
+      <button type="button" data-theme-choice="auto" aria-pressed="true">auto</button>
+      <button type="button" data-theme-choice="light" aria-pressed="false">light</button>
+      <button type="button" data-theme-choice="dark" aria-pressed="false">dark</button>
+    </div>
+    <div class="ornament" aria-hidden="true"></div>
+    <div class="mast-row">
+      <div>
+        <p class="kicker">A second pair of eyes</p>
+        <h1>The Coach&rsquo;s <em>Notebook</em></h1>
+      </div>
+      <form id="filters" class="reading" autocomplete="off">
+        <label for="username">Reading the games of</label>
+        <input id="username" name="username" type="text" minlength="2" maxlength="40" required
+               placeholder="chess.com name" spellcheck="false">
+        <label for="time-class" class="sr">Time control</label>
+        <select id="time-class" name="time_class">
+          <option value="">every time control</option>
+          <option value="blitz">blitz only</option>
+          <option value="bullet">bullet only</option>
+          <option value="rapid">rapid only</option>
+        </select>
+        <button type="submit">Open</button>
+      </form>
+    </div>
+    <nav id="tabs" class="chapters" role="tablist" aria-label="Chapters">
+      <button role="tab" data-tab="overview" aria-selected="true"><i>I</i>Overview</button>
+      <button role="tab" data-tab="weakness" aria-selected="false"><i>II</i>Losses</button>
+      <button role="tab" data-tab="openings" aria-selected="false"><i>III</i>Openings</button>
+      <button role="tab" data-tab="clock" aria-selected="false"><i>IV</i>Clock</button>
+      <button role="tab" data-tab="patterns" aria-selected="false"><i>V</i>Patterns</button>
+      <button role="tab" data-tab="season" aria-selected="false"><i>VI</i>Season</button>
+      <button role="tab" data-tab="moments" aria-selected="false"><i>VII</i>Moments</button>
+      <button role="tab" data-tab="train" aria-selected="false"><i>VIII</i>Train</button>
+    </nav>
+  </header>
+
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+  <main id="view" tabindex="-1"></main>
+
+  <footer class="colophon">
+    <p>Set in system serif. Everything is computed on this machine from your own games and
+    Stockfish; nothing leaves it. A difference is called clear only when it is larger than the
+    noise a sample of this size would produce on its own.</p>
+  </footer>
+
+  <script src="/static/board.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

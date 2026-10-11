@@ -1,0 +1,137 @@
+"""MCP server entry point."""
+
+from __future__ import annotations
+
+from mcp.server.fastmcp import FastMCP
+
+from . import coach, opportunities, patterns, peers, reports
+from .analysis import analyze_pending, default_engine_factory
+from .analysis import status as analysis_progress
+from .chesscom import ChessComClient
+from .config import stockfish_path
+from .db import connect
+from .sync import sync_games as _sync_games
+
+mcp = FastMCP("chess-coach")
+
+
+@mcp.tool()
+def sync_games(username: str, months: int = 3) -> dict:
+    """Download a chess.com player's recent games into the local cache.
+
+    Only standard chess is stored. Already-cached games are skipped, so it is
+    safe to call repeatedly. Returns counts, not the games themselves.
+    """
+    client = ChessComClient()
+    try:
+        return _sync_games(connect(), client, username, months)
+    finally:
+        client.close()
+
+
+@mcp.tool()
+def analyze_games(username: str, batch_size: int = 25, max_seconds: float = 45) -> dict:
+    """Analyse not-yet-analysed games with Stockfish, newest first.
+
+    Works in small batches so one call stays fast; call again to continue.
+    Returns progress counts only. Use sync_games first to download games.
+    """
+    return analyze_pending(
+        connect(), default_engine_factory(stockfish_path()), username,
+        limit=batch_size, max_seconds=max_seconds,
+    )
+
+
+@mcp.tool()
+def analysis_status(username: str) -> dict:
+    """How many of a player's cached games are analysed vs pending."""
+    return analysis_progress(connect(), username)
+
+
+@mcp.tool()
+def weakness_report(username: str, time_class: str | None = None, last_n: int | None = None) -> dict:
+    """Where a player loses most: by game phase, colour and time control, and how
+    often winning positions are thrown away. Optionally limit to a time class
+    (bullet/blitz/rapid) and/or the most recent N analysed games."""
+    return reports.weakness_report(connect(), username, time_class, last_n)
+
+
+@mcp.tool()
+def opening_report(username: str, min_games: int = 3, time_class: str | None = None,
+                   last_n: int | None = None) -> dict:
+    """Results and opening-phase quality per opening and colour, worst first."""
+    return reports.opening_report(connect(), username, min_games, time_class, last_n)
+
+
+@mcp.tool()
+def time_pressure_report(username: str, time_class: str | None = None,
+                         last_n: int | None = None) -> dict:
+    """How the clock affects a player's results: errors by time-pressure zone, hasty vs
+    considered blunders, time spent per phase, and games lost on time."""
+    return reports.time_pressure_report(connect(), username, time_class, last_n)
+
+
+@mcp.tool()
+def missed_opportunities(username: str, n: int = 5, time_class: str | None = None,
+                         last_n: int | None = None) -> dict:
+    """How often the player used the opponent's blunders, and the costliest chances missed."""
+    return opportunities.missed_opportunities(connect(), username, n, time_class, last_n)
+
+
+@mcp.tool()
+def sacrifice_candidates(username: str, n: int = 10, time_class: str | None = None,
+                         last_n: int | None = None) -> dict:
+    """Sound moves that put a piece on offer. Approximates chess.com's 'brilliant'
+    label but over-reports (about ten false candidates per real brilliant)."""
+    return opportunities.sacrifice_candidates(connect(), username, n, time_class, last_n)
+
+
+@mcp.tool()
+def coach_plan(username: str, time_class: str | None = None, recent_games: int = 100) -> dict:
+    """Start here. Why the player's recent games were not won (one primary cause each),
+    one focus for the coming week with the evidence, and the trend against earlier games.
+    Use the other reports to drill into the focus area."""
+    return coach.coach_plan(connect(), username, time_class, recent_games)
+
+
+@mcp.tool()
+def tilt_report(username: str, time_class: str | None = None, session_gap_minutes: float = 30) -> dict:
+    """Does the player play worse after losses, or later in a session? Games are grouped into
+    sessions (a pause longer than the gap starts a new one). Differences are reported
+    only when they are larger than sampling noise."""
+    return patterns.tilt_report(connect(), username, time_class, session_gap_minutes)
+
+
+@mcp.tool()
+def time_of_day_report(username: str, time_class: str | None = None) -> dict:
+    """Results and blunder rate by time of day (local clock) and weekday vs weekend."""
+    return patterns.time_of_day_report(connect(), username, time_class)
+
+
+@mcp.tool()
+def resilience_report(username: str, time_class: str | None = None) -> dict:
+    """How often the player saved (won or drew) a game after a clearly worse position."""
+    return patterns.resilience_report(connect(), username, time_class)
+
+
+@mcp.tool()
+def peer_comparison(username: str) -> dict:
+    """Compare the player's 3+0 blitz numbers with players of other rating bands (medians and
+    quartiles from public games). Sample sizes are listed per band; thin bands are flagged
+    tentative and give no verdict."""
+    return peers.peer_report(connect(), username)
+
+
+@mcp.tool()
+def worst_moments(username: str, n: int = 5, time_class: str | None = None,
+                  last_n: int | None = None) -> dict:
+    """The player's costliest confirmed blunders with FEN, move played and best move."""
+    return reports.worst_moments(connect(), username, n, time_class, last_n)
+
+
+def main() -> None:
+    mcp.run()
+
+
+if __name__ == "__main__":
+    main()
