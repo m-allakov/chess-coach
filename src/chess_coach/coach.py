@@ -7,7 +7,7 @@ from __future__ import annotations
 import sqlite3
 from collections import defaultdict
 
-from . import commentary, evidence, reports
+from . import commentary, evidence, principle_tests, reports
 from .moves import my_moves
 from .stats import compare_means, compare_rates
 
@@ -219,5 +219,6 @@ def coach_plan(conn: sqlite3.Connection, username: str, time_class: str | None =
     profile = evidence.decisive_blunders(conn, username, time_class)
     result["weekly_focus"]["principle_advice"] = commentary.advice_for(top)
     result["commentary"] = commentary.generate(result, profile)
+    result["principle_checks"] = principle_tests.report(conn, username, time_class)
     result["evidence"] = {"decisive_blunders": profile}
     return result

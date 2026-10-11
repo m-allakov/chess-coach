@@ -236,6 +236,22 @@
       practiseButton(focus.area));
   }
 
+  const CHECK_WORD = { supported: "Holds for you", contradicted: "Does not hold for you", inconclusive: "Cannot tell yet" };
+
+  /** Book advice that the player's own games can confirm or contradict. */
+  function checksSection(plan) {
+    const checks = plan.principle_checks || [];
+    if (!checks.length) return null;
+    return section("Do the books hold for you?",
+      h("p", { class: "lede", style: "font-size:19px" }, "Coaching books describe players in general. These claims were measured against your own games, one comparison each."),
+      h("div", { class: "checks" }, checks.map((c) => h("article", { class: `check ${c.verdict}` },
+        h("div", { class: "check-head" }, h("span", { class: "check-word" }, CHECK_WORD[c.verdict] || c.verdict),
+          h("small", { class: "provenance" }, `${c.source.author}, ${c.source.title}`)),
+        h("p", { class: "check-advice" }, c.advice),
+        h("p", null, c.summary),
+        h("p", { class: "note" }, c.caveat)))));
+  }
+
   async function overview() {
     const [plan, status, peerData] = await Promise.all([api("coach"), api("status"), api("peers").catch(() => null)]);
     if (!plan.games_analysed) return empty("No analysed games yet. Sync and analyse some games first.");
@@ -265,6 +281,7 @@
         : h("p", { class: "note" }, "Not enough earlier games to compare.")),
       peerSection(peerData),
       adviceSection(plan),
+      checksSection(plan),
       h("p", { class: "note", style: "margin-top:28px" }, `${status.games_analyzed} of ${status.games_total} games analysed.`));
   }
 

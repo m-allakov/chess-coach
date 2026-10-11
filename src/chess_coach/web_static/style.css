@@ -305,3 +305,14 @@ dialog.viewer::backdrop { background: rgba(8, 10, 8, .62); backdrop-filter: blur
 .lens-line { margin: 6px 0; font-size: 16px; line-height: 1.5; }
 .lens-line.ok { color: var(--pine); }
 .lens-line.bad { color: var(--oxblood); }
+
+/* ---- principle checks ---------------------------------------------------------------- */
+.checks { display: grid; gap: 14px; margin-top: 18px; }
+.check { border-left: 3px solid var(--rule); padding: 4px 0 4px 16px; }
+.check.supported { border-left-color: var(--pine); }
+.check.contradicted { border-left-color: var(--oxblood); }
+.check-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.check-word { font: 600 11px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; }
+.check.supported .check-word { color: var(--pine); }
+.check.contradicted .check-word { color: var(--oxblood); }
+.check-advice { margin: 8px 0 4px; font-style: italic; }
