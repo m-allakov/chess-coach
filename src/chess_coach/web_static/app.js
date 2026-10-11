@@ -206,6 +206,22 @@
         h("small", null, `${sign}${t.change}  (noise ±${fmt(t.noise_margin)})`)));
   }
 
+  function adviceSection(plan) {
+    const focus = plan.weekly_focus;
+    const items = focus.principle_advice || [];
+    if (!items.length) {
+      return section("What to do about it",
+        h("ol", { class: "advice" }, focus.general_advice.map((t) => h("li", null, t))),
+        h("p", { class: "note", style: "margin-top:16px" }, "Standard training guidance, not derived from your games."));
+    }
+    return section("What to do about it",
+      plan.commentary ? h("p", { class: "lede", style: "font-size:19px" }, plan.commentary.text) : null,
+      h("ol", { class: "advice" }, items.map((a) => h("li", null,
+        h("span", null, a.text, h("small", { class: "provenance" }, `${a.source.author}, ${a.source.title}`))))),
+      h("p", { class: "note", style: "margin-top:16px" },
+        "Habits distilled from coaching literature, in our own words. The numbers come from your own games."));
+  }
+
   async function overview() {
     const [plan, status, peerData] = await Promise.all([api("coach"), api("status"), api("peers").catch(() => null)]);
     if (!plan.games_analysed) return empty("No analysed games yet. Sync and analyse some games first.");
@@ -234,9 +250,7 @@
           h("p", { class: "note", style: "margin-top:12px" }, "The shaded band is how far a result can drift by chance alone. Open dot: earlier games. Solid dot: recent games. A change counts only when the solid dot leaves the band."))
         : h("p", { class: "note" }, "Not enough earlier games to compare.")),
       peerSection(peerData),
-      section("What to do about it",
-        h("ol", { class: "advice" }, focus.general_advice.map((t) => h("li", null, t))),
-        h("p", { class: "note", style: "margin-top:16px" }, "Standard training guidance, not derived from your games.")),
+      adviceSection(plan),
       h("p", { class: "note", style: "margin-top:28px" }, `${status.games_analyzed} of ${status.games_total} games analysed.`));
   }
 

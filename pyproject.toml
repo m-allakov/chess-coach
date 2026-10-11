@@ -24,7 +24,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-chess_coach = ["web_static/*", "benchmarks.json"]
+chess_coach = ["web_static/*", "benchmarks.json", "knowledge/sources.json", "knowledge/principles/*.jsonl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

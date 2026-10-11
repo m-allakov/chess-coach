@@ -21,6 +21,9 @@ HOOKS = {
     "drill.threat_check", "drill.threat_then_prevention", "drill.opponent_just_erred",
     "explain.move", "coach.habit", "coach.level_assessment", "eval.principle_test",
 }
+CAUSES = {"time", "thrown_win", "opening", "blunder", "gradual"}   # keep in step with coach.CAUSES
+MAX_ADVICE_WORDS = 40
+KNOWLEDGE_DIR = Path(__file__).with_name("knowledge")
 MAX_CLAIM_WORDS = 60
 MAX_QUOTE_WORDS = 12
 ID_PATTERN = re.compile(r"^[a-z]{2,6}-\d{3}$")
@@ -57,6 +60,17 @@ def validate_record(rec: dict, known_books: set[str] | None = None) -> list[str]
     for hook in rec.get("app_hooks", []):
         if hook not in HOOKS:
             errs.append(f"unknown app hook: {hook}")
+    for cause in rec.get("relevant_to", []):
+        if cause not in CAUSES:
+            errs.append(f"unknown cause in relevant_to: {cause}")
+    advice = rec.get("advice")
+    if advice is not None and (not isinstance(advice, str) or not advice.strip() or len(words(advice)) > MAX_ADVICE_WORDS):
+        errs.append(f"advice must be a short sentence of at most {MAX_ADVICE_WORDS} words")
+    if rec.get("relevant_to") and not advice:
+        errs.append("a principle that is relevant_to a cause needs user-facing advice")
+    prio = rec.get("priority")
+    if prio is not None and not (isinstance(prio, int) and 1 <= prio <= 9):
+        errs.append("priority must be an integer from 1 (most important) to 9")
     pred = rec.get("testable_prediction")
     if rec["status"] == "untestable" and pred:
         errs.append("an untestable principle must not carry a testable_prediction")
@@ -117,3 +131,17 @@ def shared_run(claim: str, source_text: str, n: int = 8) -> str | None:
         if run in grams:
             return run
     return None
+
+
+def sources() -> dict[str, dict]:
+    """Bibliographic records by book key."""
+    data = json.loads((KNOWLEDGE_DIR / "sources.json").read_text(encoding="utf-8"))
+    return {b["key"]: b for b in data["books"]}
+
+
+def load_all() -> list[dict]:
+    """Every shipped principle, in file and line order."""
+    out: list[dict] = []
+    for f in sorted((KNOWLEDGE_DIR / "principles").glob("*.jsonl")):
+        out.extend(load(f))
+    return out

@@ -1,7 +1,7 @@
 """Validate principle files and (optionally) check them against the private source text.
 
-    python tools/validate_principles.py docs/pedagogy/principles/*.jsonl
-    python tools/validate_principles.py docs/pedagogy/principles/x.jsonl --against books_work/<slug>/book.md
+    python tools/validate_principles.py src/chess_coach/knowledge/principles/*.jsonl
+    python tools/validate_principles.py src/chess_coach/knowledge/principles/x.jsonl --against books_work/<slug>/book.md
 
 With --against, any claim that shares a run of 8 or more consecutive words with the book is
 reported: claims must be in the project's own words. Exit status is non-zero on any problem.
@@ -28,7 +28,7 @@ def main() -> int:
     ap.add_argument("--run", type=int, default=8, help="shared-word-run length that counts as copying")
     args = ap.parse_args()
 
-    sources = json.loads((ROOT / "docs/pedagogy/sources.json").read_text(encoding="utf-8"))
+    sources = json.loads((ROOT / "src/chess_coach/knowledge/sources.json").read_text(encoding="utf-8"))
     books = {b["key"] for b in sources["books"]}
     text = Path(args.against).read_text(encoding="utf-8") if args.against else None
     bad = 0
@@ -37,9 +37,10 @@ def main() -> int:
         problems = principles.validate_file(path, books)
         if text:
             for rec in principles.load(path):
-                run = principles.shared_run(rec["claim"], text, args.run)
-                if run:
-                    problems.setdefault(rec["id"], []).append(f"copies {args.run}+ words from the source: '{run}'")
+                for field in ("claim", "advice"):
+                    run = principles.shared_run(rec.get(field) or "", text, args.run)
+                    if run:
+                        problems.setdefault(rec["id"], []).append(f"{field} copies {args.run}+ words from the source: '{run}'")
         count = len(principles.load(path))
         print(f"{path.name}: {count} records, {len(problems)} with problems")
         for rid, errs in problems.items():

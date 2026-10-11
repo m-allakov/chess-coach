@@ -6,7 +6,7 @@ import pytest
 from chess_coach import principles as p
 
 ROOT = Path(__file__).resolve().parents[1]
-BOOKS = {b["key"] for b in json.loads((ROOT / "docs/pedagogy/sources.json").read_text(encoding="utf-8"))["books"]}
+BOOKS = {b["key"] for b in json.loads((ROOT / "src/chess_coach/knowledge/sources.json").read_text(encoding="utf-8"))["books"]}
 
 
 def good(**over):
@@ -68,7 +68,7 @@ def test_copy_check_catches_a_lifted_sentence_and_ignores_a_paraphrase():
 
 
 def test_every_shipped_principle_file_is_valid():
-    files = sorted((ROOT / "docs/pedagogy/principles").glob("*.jsonl"))
+    files = sorted((ROOT / "src/chess_coach/knowledge/principles").glob("*.jsonl"))
     assert files, "the pilot principle file should exist"
     for f in files:
         assert p.validate_file(f, BOOKS) == {}, f.name
