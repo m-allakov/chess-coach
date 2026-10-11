@@ -66,3 +66,11 @@ def test_a_backend_that_invents_numbers_is_rejected_and_replaced(monkeypatch):
     out = c.generate(PLAN, PROFILE, backend="liar")
     assert out["backend"] == "template" and out["faithfulness"]["ok"]
     assert out["rejected_text"] == "You lost 99% of your games from winning positions."
+
+
+def test_a_digit_inside_a_cited_title_is_not_an_unsupported_number():
+    facts = {"focus_games": 19}
+    text = "Dvoretsky covers this in Secrets of Chess Training (School of Future Champions 1) for 19 games."
+    assert c.faithfulness(text, facts)["ok"] is False
+    assert c.faithfulness(text, facts, ("Secrets of Chess Training (School of Future Champions 1)",))["ok"] is True
+    assert c.faithfulness(text.replace("19", "87"), facts, ("Secrets of Chess Training (School of Future Champions 1)",))["unsupported_numbers"] == ["87"]

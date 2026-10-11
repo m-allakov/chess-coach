@@ -51,8 +51,11 @@ def build_facts(plan: dict, profile: dict | None = None) -> dict:
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
 
 
-def faithfulness(text: str, facts: dict) -> dict:
-    """Every number in `text` must be one of the facts (as written, or rounded to a whole number)."""
+def faithfulness(text: str, facts: dict, names: tuple[str, ...] = ()) -> dict:
+    """Every number in `text` must be one of the facts (as written, or rounded to a whole number).
+    `names` are proper names the text cites (book titles); a digit inside one is not a claim."""
+    for name in names:
+        text = text.replace(name, "")
     allowed: set[str] = set()
     for v in facts.values():
         if isinstance(v, (int, float)) and not isinstance(v, bool):
@@ -105,11 +108,12 @@ def generate(plan: dict, profile: dict | None = None, backend: str = "template")
     facts = build_facts(plan, profile)
     advice = advice_for(facts["focus"])
     text = BACKENDS[backend].comment(facts, advice)
-    check = faithfulness(text, facts)
+    titles = tuple(a["source"]["title"] for a in advice)
+    check = faithfulness(text, facts, titles)
     result = {"backend": backend, "text": text, "faithfulness": check, "facts": facts}
     if not check["ok"]:
         result["rejected_text"] = text
         result["backend"] = "template"
         result["text"] = BACKENDS["template"].comment(facts, advice)
-        result["faithfulness"] = faithfulness(result["text"], facts)
+        result["faithfulness"] = faithfulness(result["text"], facts, titles)
     return result
