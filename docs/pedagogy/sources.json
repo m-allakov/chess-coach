@@ -1,0 +1,14 @@
+{
+  "note": "Bibliographic metadata only. The books are used for private study and are not part of this repository.",
+  "books": [
+    {"key": "heisman-looking-for-trouble", "author": "Dan Heisman", "title": "Looking for Trouble: Recognizing and Meeting Threats in Chess", "edition": "Second edition (Russell Enterprises)", "audience_rating": [1100, 2300]},
+    {"key": "heisman-everyones-2nd-chess-book", "author": "Dan Heisman", "title": "Everyone's 2nd Chess Book", "edition": "Thinkers' Press, 2005"},
+    {"key": "heisman-improving-chess-thinker", "author": "Dan Heisman", "title": "The Improving Chess Thinker", "edition": "2014"},
+    {"key": "rowson-seven-deadly-chess-sins", "author": "Jonathan Rowson", "title": "The Seven Deadly Chess Sins", "edition": "Gambit, 2000"},
+    {"key": "silman-amateurs-mind", "author": "Jeremy Silman", "title": "The Amateur's Mind", "edition": ""},
+    {"key": "dvoretsky-yusupov-technique", "author": "Mark Dvoretsky, Artur Yusupov", "title": "Technique for the Tournament Player", "edition": ""},
+    {"key": "dvoretsky-yusupov-secrets-of-chess-training", "author": "Mark Dvoretsky, Artur Yusupov", "title": "Secrets of Chess Training (School of Future Champions 1)", "edition": ""},
+    {"key": "yusupov-build-up-1", "author": "Artur Yusupov", "title": "Build Up Your Chess 1: The Fundamentals", "edition": "Quality Chess, 2008"},
+    {"key": "chernev-logical-chess", "author": "Irving Chernev", "title": "Logical Chess: Move by Move", "edition": "New algebraic edition"}
+  ]
+}

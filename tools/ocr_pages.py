@@ -117,6 +117,12 @@ def page_markdown(page: "fitz.Page") -> str:
     return "\n\n".join(parts)
 
 
+def grams(s: str, n: int = 5) -> Counter:
+    """Character n-grams of the text with everything but letters and digits removed."""
+    flat = re.sub(r"[^a-z0-9]", "", s.lower())
+    return Counter(flat[i: i + n] for i in range(len(flat) - n + 1))
+
+
 def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.replace("\u00ad", "").replace("-\n", "")).strip()
 
@@ -124,7 +130,7 @@ def norm(s: str) -> str:
 def cmd_eval(args) -> None:
     doc = fitz.open(args.book)
     lo, hi = (int(x) for x in args.pages.split("-"))
-    sims, recalls, secs = [], [], []
+    sims, recalls, secs, gram_recall = [], [], [], []
     for n in range(lo, hi + 1):
         page = doc[n - 1]
         truth = norm(page.get_text("text"))
@@ -137,11 +143,15 @@ def cmd_eval(args) -> None:
         tw = re.findall(r"[a-z0-9']+", truth.lower())
         gw = re.findall(r"[a-z0-9']+", got.lower())
         sims.append(difflib.SequenceMatcher(None, tw, gw, autojunk=False).ratio())
+        # Whitespace-insensitive check: OCR often glues words together ("positionasalevel"), which a
+        # word comparison counts as errors although the content is intact.
+        g_truth, g_got = grams(truth), grams(got)
+        gram_recall.append(sum(min(c, g_got[g]) for g, c in g_truth.items()) / max(1, sum(g_truth.values())))
         want, have = Counter(tw), Counter(gw)
         recalls.append(sum(min(c, have[w]) for w, c in want.items()) / max(1, sum(want.values())))
-        print(f"  page {n}: similarity {sims[-1]:.3f}, word recall {recalls[-1]:.3f}, {secs[-1]:.1f}s", flush=True)
-    print(f"mean similarity {np.mean(sims):.3f} | mean word recall {np.mean(recalls):.3f} | {np.mean(secs):.1f}s/page "
-          f"over {len(sims)} pages")
+        print(f"  page {n}: word recall {recalls[-1]:.3f}, content recall {gram_recall[-1]:.3f}, {secs[-1]:.1f}s", flush=True)
+    print(f"mean word recall {np.mean(recalls):.3f} | mean content recall (5-grams, spaces ignored) "
+          f"{np.mean(gram_recall):.3f} | {np.mean(secs):.1f}s/page over {len(sims)} pages")
 
 
 def cmd_run(args) -> None:
