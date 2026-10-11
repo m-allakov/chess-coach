@@ -206,20 +206,34 @@
         h("small", null, `${sign}${t.change}  (noise ±${fmt(t.noise_margin)})`)));
   }
 
+  // Which exercise fits each cause: throwing away a won position is exactly "reply after their mistake".
+  const PRACTISE = {
+    thrown_win: ["erred", "Practise holding what you win"],
+    blunder: ["erred", "Practise the threat check"],
+  };
+
+  function practiseButton(area) {
+    const [mode, label] = PRACTISE[area] || ["own", "Practise with your own positions"];
+    return h("p", { style: "margin-top:20px" }, h("button", { type: "button", class: "btn",
+      onclick: () => { remember("chess-coach-train-mode", mode); show_tab("train"); } }, label));
+  }
+
   function adviceSection(plan) {
     const focus = plan.weekly_focus;
     const items = focus.principle_advice || [];
     if (!items.length) {
       return section("What to do about it",
         h("ol", { class: "advice" }, focus.general_advice.map((t) => h("li", null, t))),
-        h("p", { class: "note", style: "margin-top:16px" }, "Standard training guidance, not derived from your games."));
+        h("p", { class: "note", style: "margin-top:16px" }, "Standard training guidance, not derived from your games."),
+        practiseButton(focus.area));
     }
     return section("What to do about it",
       plan.commentary ? h("p", { class: "lede", style: "font-size:19px" }, plan.commentary.text) : null,
       h("ol", { class: "advice" }, items.map((a) => h("li", null,
         h("span", null, a.text, h("small", { class: "provenance" }, `${a.source.author}, ${a.source.title}`))))),
       h("p", { class: "note", style: "margin-top:16px" },
-        "Habits distilled from coaching literature, in our own words. The numbers come from your own games."));
+        "Habits distilled from coaching literature, in our own words. The numbers come from your own games."),
+      practiseButton(focus.area));
   }
 
   async function overview() {
