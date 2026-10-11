@@ -76,7 +76,7 @@
     lost_on_time_pct_of_games: { name: "Lost on time", note: "share of games", suffix: "%" },
     winning_positions_not_won_pct: { name: "Winning positions not won", note: "share of those reached", suffix: "%" },
   };
-  const ARROW = { played: "#c0392b", best: "#3a8f66", answer: "#3b6fa5" };
+  const ARROW = { played: "#c0392b", best: "#3a8f66", answer: "#3b6fa5", theirs: "#d98c1f" };
 
   function empty(text) { return h("p", { class: "empty" }, text || "Nothing to show yet."); }
   function section(title, ...body) {
@@ -601,18 +601,43 @@
   const VERDICT_TEXT = { best: "Best.", good: "Good.", inaccurate: "Inaccurate.", mistake: "A mistake.", blunder: "A blunder." };
   const session = { tried: 0, solved: 0, streak: 0 };
 
+  const PIECE_NAME = { P: "pawn", N: "knight", B: "bishop", R: "rook", Q: "queen" };
+
+  /** What the opponent could do after the player's answer: the habit this exercise trains. */
+  function lensBlock(l) {
+    if (!l) return null;
+    const lines = [];
+    if (l.verdict === "clear") lines.push("Blunder check passed: after your move nothing hangs and they have no mate in one.");
+    if (l.mate_in_one.length) lines.push(`They could mate in one: ${l.mate_in_one.join(", ")}.`);
+    l.hanging.forEach((x) => lines.push(`They could win your ${PIECE_NAME[x.piece] || "piece"} on ${x.square} (about ${x.gain} point${x.gain === 1 ? "" : "s"}).`));
+    if (!l.mate_in_one.length && !l.hanging.length && l.checks.length) lines.push(`They have checks available: ${l.checks.join(", ")}.`);
+    return h("div", { class: "lens" }, h("h3", null, "The threat check"),
+      lines.map((text) => h("p", { class: `lens-line ${l.verdict === "clear" ? "ok" : "bad"}` }, text)));
+  }
+
   async function train() {
     const progress = loadProgress();
     const now = Date.now();
     const resting = Object.entries(progress).filter(([, p]) => p.due > now).map(([id]) => id);
-    const data = await api("trainer", { fresh: true, query: { n: 15, exclude: resting.join(",") } });
-    if (!data.puzzles.length) return empty("Nothing due right now. Positions you solved come back after a few days; new ones appear as you play and analyse more games.");
+    const mode = recall("chess-coach-train-mode") === "erred" ? "erred" : "own";
+    const data = await api("trainer", { fresh: true, query: { n: 15, exclude: resting.join(","), mode } });
+    const switcher = h("div", { class: "modes", role: "group", "aria-label": "Exercise type" },
+      [["own", "My blunders"], ["erred", "After their mistake"]].map(([m, label]) =>
+        h("button", { type: "button", class: "mode", "aria-pressed": String(mode === m),
+          onclick: () => { remember("chess-coach-train-mode", m); show_tab("train"); } }, label)));
+    if (!data.puzzles.length) {
+      return h("div", null, section(null, h("h2", null, "Find the ", h("em", null, "move")), switcher),
+        empty("Nothing due right now. Positions you solved come back after a few days; new ones appear as you play and analyse more games."));
+    }
 
     const host = h("div");
     let index = 0;
     const stage = h("div", { class: "studio" });
-    host.append(section(null, h("h2", null, "Find the ", h("em", null, "move")),
-      h("p", { class: "lede" }, "These are positions from your own games where a move cost you dearly. Click a piece, then its destination. Any move that keeps the position counts, not only the engine's first choice."), stage));
+    const intro = mode === "erred"
+      ? "These are positions from your own games right after your opponent made a mistake, where your reply gave the advantage back. First think about what changed and what they could do next, then move. Afterwards the threat check shows what you may have missed."
+      : "These are positions from your own games where a move cost you dearly. Click a piece, then its destination. Any move that keeps the position counts, not only the engine's first choice.";
+    host.append(section(null, h("h2", null, "Find the ", h("em", null, "move")), switcher,
+      h("p", { class: "lede" }, intro), stage));
 
     const scoreBox = h("div", { class: "score" });
     function paintScore() {
@@ -636,8 +661,10 @@
       const skip = h("button", { class: "btn quiet", onclick: () => { index += 1; show(); } }, "Skip");
       const prompt = h("div", { class: "prompt" },
         h("div", { class: "to-move" }, `${p.color === "white" ? "White" : "Black"} to move`),
-        h("h2", null, "What would you play?"),
-        h("p", { class: "note" }, `Move ${p.move_number}, ${p.phase}. Here you stood at ${p.win_chance}%.`),
+        h("h2", null, p.kind === "erred" ? "What changed?" : "What would you play?"),
+        h("p", { class: "note" }, p.kind === "erred"
+          ? `${p.prev_san ? `Your opponent just played ${p.prev_san}, a mistake. ` : ""}Before you move, imagine passing: what could they do next? Move ${p.move_number}, ${p.phase}; you stood at ${p.win_chance}%.`
+          : `Move ${p.move_number}, ${p.phase}. Here you stood at ${p.win_chance}%.`),
         feedback, h("div", { class: "row" }, skip), scoreBox);
       stage.replaceChildren(boardHost, prompt);
       paintScore();
@@ -654,7 +681,8 @@
             const r = await res.json();
             if (!res.ok) { feedback.replaceChildren(h("p", { class: "error" }, `${r.error}. Try another move.`)); busy = false; return; }
             controller.lock();
-            controller.show([{ uci: r.played_uci, color: ARROW.played }, { uci: r.best_uci, color: ARROW.best }, { uci, color: ARROW.answer }]);
+            controller.show([{ uci: r.played_uci, color: ARROW.played }, { uci: r.best_uci, color: ARROW.best }, { uci, color: ARROW.answer }],
+              (r.after_your_move ? r.after_your_move.hanging : []).map((x) => x.square));
             session.tried += 1;
             if (r.solved) { session.solved += 1; session.streak += 1; } else session.streak = 0;
             const prog = loadProgress();
@@ -671,7 +699,8 @@
               h("div", { class: "legend" },
                 h("span", null, h("i", { style: `background:${ARROW.answer}` }), "your answer"),
                 h("span", null, h("i", { style: `background:${ARROW.best}` }), "engine"),
-                h("span", null, h("i", { style: `background:${ARROW.played}` }), "in the game")));
+                h("span", null, h("i", { style: `background:${ARROW.played}` }), "in the game")),
+              lensBlock(r.after_your_move));
             skip.replaceWith(h("button", { class: "btn", onclick: () => { index += 1; show(); } }, "Next position"));
             paintScore();
           } catch (err) {
@@ -680,6 +709,7 @@
           }
         },
       });
+      if (p.kind === "erred" && p.prev_uci) controller.show([{ uci: p.prev_uci, color: ARROW.theirs }]);
     }
     show();
     return host;

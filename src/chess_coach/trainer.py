@@ -7,15 +7,18 @@ from __future__ import annotations
 
 import random
 import sqlite3
+from collections import defaultdict
 
 import chess
 
 from .analysis import search
 from .classify import mover_win_pct
+from . import threats
 from .moves import my_moves
 
 MIN_LOSS = 20.0        # the original blunder cost at least this many win-chance points
 MIN_BEFORE = 30.0      # skip positions that were already lost: there was nothing to find
+ERRED_MIN_LOSS = 10.0   # the player's reply after an opponent mistake gave back at least this much
 MIN_DEPTH = 16         # only blunders confirmed by the deeper pass
 CHECK_DEPTH = 12       # depth used to judge the answer given in the app
 
@@ -45,6 +48,35 @@ def puzzles(conn: sqlite3.Connection, username: str, n: int = 12, time_class: st
             "phase": m["phase"], "move_number": m["move_number"],
             "win_chance": round(m["wp_before"]), "game": m["url"],
         } for m in pool[:n]],
+    }
+
+
+def erred_puzzles(conn: sqlite3.Connection, username: str, n: int = 12, time_class: str | None = None,
+                  seed: int | None = None, exclude: set[str] | None = None) -> dict:
+    """Positions right after the opponent blundered, where the player's actual reply gave the
+    advantage back. The answer is not included; the opponent's last move is, so the board can show it."""
+    skip = exclude or set()
+    by_game: dict[str, dict[int, dict]] = defaultdict(dict)
+    for m in my_moves(conn, username, time_class, who="both"):
+        by_game[m["url"]][m["ply"]] = m
+    pool = []
+    for plies in by_game.values():
+        for ply, opp in plies.items():
+            mine = plies.get(ply + 1)
+            if (opp["mine"] or opp["kind"] != "blunder" or not mine or not mine["mine"]
+                    or mine["wp_before"] < MIN_BEFORE or mine["wp_loss"] < ERRED_MIN_LOSS
+                    or mine["depth"] < 12 or not mine["best_uci"] or mine["uci"] == mine["best_uci"]
+                    or puzzle_id(mine["url"], mine["ply"]) in skip):
+                continue
+            pool.append((opp, mine))
+    random.Random(seed).shuffle(pool)
+    return {
+        "available": len(pool), "mode": "erred",
+        "puzzles": [{
+            "id": puzzle_id(mine["url"], mine["ply"]), "kind": "erred", "fen": mine["fen"], "color": mine["color"],
+            "phase": mine["phase"], "move_number": mine["move_number"], "win_chance": round(mine["wp_before"]),
+            "game": mine["url"], "prev_uci": opp["uci"], "prev_san": opp["san"],
+        } for opp, mine in pool[:n]],
     }
 
 
@@ -81,6 +113,9 @@ def check(conn: sqlite3.Connection, engine, username: str, pid: str, uci: str) -
         return {"error": "Illegal move"}
 
     color = row["color"]
+    after = board.copy()
+    after.push(move)
+    lens = threats.lens(after.fen())
     before = mover_win_pct(row["cp"], color)
     answer_san = board.san(move)
     best = chess.Move.from_uci(row["best_uci"])
@@ -97,4 +132,5 @@ def check(conn: sqlite3.Connection, engine, username: str, pid: str, uci: str) -
         "answer": answer_san, "best": best_san, "best_uci": row["best_uci"],
         "played_in_game": row["move_san"], "played_uci": row["move_uci"],
         "win_chance_lost": round(loss, 1), "game": row["url"],
+        "after_your_move": lens,
     }

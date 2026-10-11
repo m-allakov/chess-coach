@@ -38,6 +38,16 @@ _TIME_CLASSES = {"bullet", "blitz", "rapid"}
 LOCAL_HOSTS = ["127.0.0.1", "localhost"]
 
 
+class NoCacheStatic(StaticFiles):
+    """Static files that the browser must revalidate on every load. This is a local app that changes
+    often; a cached script from before an update would otherwise keep running with stale logic."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def create_app(db_path: str | Path | None = None, default_username: str = "",
                engine_factory=None, allowed_hosts: list[str] | None = None) -> Starlette:
     """`engine_factory` builds the engine used to judge trainer answers; it is started
@@ -151,7 +161,11 @@ def create_app(db_path: str | Path | None = None, default_username: str = "",
         exclude = {x for x in request.query_params.get("exclude", "").split(",") if x}
         conn = connect(db)
         try:
-            return JSONResponse(trainer.puzzles(conn, username, count, time_class, exclude=exclude))
+            mode = request.query_params.get("mode", "own")
+            if mode not in ("own", "erred"):
+                raise HTTPException(400, "mode must be own or erred")
+            pick = trainer.erred_puzzles if mode == "erred" else trainer.puzzles
+            return JSONResponse(pick(conn, username, count, time_class, exclude=exclude))
         finally:
             conn.close()
 
@@ -185,8 +199,8 @@ def create_app(db_path: str | Path | None = None, default_username: str = "",
         Route("/api/game", game_view),
         Route("/api/trainer", trainer_list),
         Route("/api/trainer/check", trainer_check, methods=["POST"]),
-        Route("/", lambda request: FileResponse(STATIC / "index.html")),
-        Mount("/static", StaticFiles(directory=STATIC), name="static"),
+        Route("/", lambda request: FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})),
+        Mount("/static", NoCacheStatic(directory=STATIC), name="static"),
     ]
 
     async def error(request: Request, exc: HTTPException) -> JSONResponse:

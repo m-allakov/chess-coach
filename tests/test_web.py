@@ -203,3 +203,19 @@ def test_cache_is_refreshed_when_the_benchmark_file_changes(client, monkeypatch,
     os.utime(fake, ns=(10**18, 10**18))                       # the benchmark file was replaced
     client.get("/api/peers")
     assert len(calls) == 2                                    # so the report was computed again
+
+
+def test_static_files_and_the_page_are_always_revalidated(client):
+    # A cached script from before an update would keep running with stale logic.
+    assert client.get("/static/app.js").headers["cache-control"] == "no-cache"
+    assert client.get("/").headers["cache-control"] == "no-cache"
+
+
+def test_trainer_modes_are_validated_and_erred_mode_is_available(client):
+    assert client.get("/api/trainer?mode=erred").status_code == 200
+    assert client.get("/api/trainer?mode=nonsense").status_code == 400
+
+
+def test_checking_an_answer_returns_the_threat_lens(client):
+    r = client.post("/api/trainer/check", json={"id": "1:2", "uci": "d2d4"}).json()
+    assert r["after_your_move"]["verdict"] in ("clear", "material", "check", "mate")

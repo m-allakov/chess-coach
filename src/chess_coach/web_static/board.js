@@ -118,12 +118,13 @@
     let selected = null;
     let locked = false;
     let arrows = [];
+    let marks = [];
 
     const pieceAt = (sq) => board[7 - rankOf(sq)][fileOf(sq)];
     const mine = (p) => p && (p === p.toUpperCase()) === whiteToMove;
 
     function draw() {
-      const el = renderBoard(fen, { flip: opts.flip, arrows, highlights: selected ? [selected] : [] });
+      const el = renderBoard(fen, { flip: opts.flip, arrows, highlights: (selected ? [selected] : []).concat(marks) });
       el.addEventListener("click", onClick);
       host.replaceChildren(el);
     }
@@ -153,7 +154,7 @@
 
     draw();
     return {
-      show(next) { arrows = next || []; selected = null; draw(); },
+      show(next, highlights) { arrows = next || []; marks = highlights || []; selected = null; draw(); },
       lock() { locked = true; selected = null; draw(); },
       unlock() { locked = false; },
     };
