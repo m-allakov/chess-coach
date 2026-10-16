@@ -50,6 +50,26 @@ CREATE TABLE IF NOT EXISTS game_analysis (
     analyzed_at   INTEGER NOT NULL
 );
 
+-- Extra per-ply engine output. Kept apart from `positions` so older databases need no
+-- column migration. mate is moves-to-mate with White's sign (+ = White mates; 0 = the
+-- position is checkmate, cp's sign then says who won); NULL = no forced mate found.
+-- pv is up to 5 UCI moves starting with the best move, space separated.
+CREATE TABLE IF NOT EXISTS position_detail (
+    url   TEXT NOT NULL,
+    ply   INTEGER NOT NULL,
+    mate  INTEGER,
+    pv    TEXT,
+    PRIMARY KEY (url, ply)
+);
+
+-- complete = 1: every ply has a detail row (analysed after this table existed).
+-- complete = 0: backfilled, so only the costly moves and near-decided positions have one.
+CREATE TABLE IF NOT EXISTS game_detail (
+    url      TEXT PRIMARY KEY,
+    engine   TEXT,
+    complete INTEGER NOT NULL
+);
+
 -- Exercise schedule (spaced repetition), one row per player and position.
 CREATE TABLE IF NOT EXISTS practice (
     username   TEXT NOT NULL,

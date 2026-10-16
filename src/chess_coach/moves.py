@@ -110,7 +110,7 @@ def my_moves(conn: sqlite3.Connection, username: str, time_class: str | None = N
             c = parse_clocks(r["pgn"])
             # Only trust clocks that line up one-to-one with the analysed plies.
             clocks[r["url"]] = c if len(c) >= plies[r["url"]] else None
-        clock = _clock_fields(r, clocks[r["url"]])
+        clock = clock_fields(r, clocks[r["url"]])
         wp0 = mover_win_pct(r["cp0"], r["turn"])   # from the side that made the move
         wp1 = mover_win_pct(r["cp1"], r["turn"])
         loss = max(0.0, wp0 - wp1)
@@ -131,7 +131,7 @@ def my_moves(conn: sqlite3.Connection, username: str, time_class: str | None = N
     return moves
 
 
-def _clock_fields(row, clocks: list[float] | None) -> dict:
+def clock_fields(row, clocks: list[float] | None) -> dict:
     """Time left before the move, time spent on it, and the resulting pressure zone."""
     none = {"clock_before": None, "time_spent": None, "base_time": None, "time_zone": None}
     tc = parse_time_control(row["time_control"])

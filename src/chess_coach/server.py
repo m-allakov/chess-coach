@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from . import coach, opportunities, patterns, peers, reports
-from .analysis import analyze_pending, default_engine_factory
+from . import coach, gameview, opportunities, patterns, peers, reports
+from .analysis import analyze_pending, backfill_details, default_engine_factory
 from .analysis import status as analysis_progress
 from .chesscom import ChessComClient
 from .config import stockfish_path
@@ -46,6 +46,58 @@ def analyze_games(username: str, batch_size: int = 25, max_seconds: float = 45) 
 def analysis_status(username: str) -> dict:
     """How many of a player's cached games are analysed vs pending."""
     return analysis_progress(connect(), username)
+
+
+@mcp.tool()
+def backfill_game_details(username: str, batch_size: int = 25, max_seconds: float = 45) -> dict:
+    """Add mate scores and best-line (PV) data to games analysed before they were stored,
+    so get_game can show them. Re-searches only costly moves and near-decided positions;
+    stored evaluations never change. Works in batches: call again until backfill_pending is 0."""
+    return backfill_details(
+        connect(), default_engine_factory(stockfish_path()), username,
+        limit=batch_size, max_seconds=max_seconds,
+    )
+
+
+@mcp.tool()
+def list_games(username: str, n: int = 10, time_class: str | None = None,
+               color: str | None = None, opening: str | None = None,
+               result: str | None = None) -> dict:
+    """The player's cached games, newest first, to find a game_id for get_game.
+
+    Filters: time_class (bullet/blitz/rapid), color ("white"/"black"), result from the
+    player's side ("win"/"loss"/"draw"), opening (case-insensitive substring of the name).
+    Each game has game_id, url, end_time (ISO 8601, UTC), time_control, time_class, color,
+    opponent, opponent_rating, my_rating, result, termination, eco, opening, moves_count
+    (full moves) and analyzed."""
+    return gameview.list_games(connect(), username, n, time_class, color, opening, result)
+
+
+@mcp.tool()
+def get_game(game: str, ply_from: int | None = None, ply_to: int | None = None,
+             only_flagged: bool = False, include_pv: bool = True,
+             username: str | None = None) -> dict:
+    """One cached game move by move, from the stored analysis (no engine is run).
+
+    `game` is a game_id or a chess.com game link. Pass `username` so meta.my_color is set.
+    ply_from/ply_to are an inclusive range. only_flagged keeps just inaccuracies, mistakes and
+    blunders of either side, plus the ply before and after each (marked "context": true).
+
+    Conventions:
+    - ply 1 is White's first move, ply 2 Black's first; Black's n-th move is ply 2n.
+    - eval_before/eval_after are always from WHITE's point of view: {"cp", "mate"}. cp is
+      clipped to +-1000. When a mate is known, cp is null and mate is the number of moves
+      (positive = White mates). mate 0 = the position is checkmate ("mated" names the loser).
+    - win_chance_before/after and wp_loss (0-100 scale) are from the point of view of the side
+      that MADE the move, the same as worst_moments. class is best/good/inaccuracy/mistake/
+      blunder, using the same thresholds as the reports. No opening-book detection exists.
+    - best_san/best_uci are null when the move played was the engine's best; best_pv_san
+      (up to 5 plies, starts with the best move) is still given, or null if not stored.
+    - clock_after is seconds left after the move; time_spent includes the increment.
+      Both are null when the game has no clock data.
+    - An unanalysed game returns SAN/UCI/FEN/clock with all evaluation fields null.
+    """
+    return gameview.get_game(connect(), game, ply_from, ply_to, only_flagged, include_pv, username)
 
 
 @mcp.tool()

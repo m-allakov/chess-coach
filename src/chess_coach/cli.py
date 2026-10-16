@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import time
 
-from .analysis import analyze_pending, default_engine_factory, status
+from .analysis import analyze_pending, backfill_details, default_engine_factory, status
 from .chesscom import ChessComClient
 from .config import stockfish_path
 from .db import connect
@@ -25,6 +25,10 @@ def main() -> None:
     a.add_argument("--batch", type=int, default=25, help="games per round")
     a.add_argument("--max-games", type=int, default=None, help="stop after this many")
 
+    b = sub.add_parser("backfill", help="add mate and best-line data to games analysed earlier")
+    b.add_argument("username")
+    b.add_argument("--batch", type=int, default=25, help="games per round")
+
     args = parser.parse_args()
     conn = connect()
 
@@ -37,6 +41,15 @@ def main() -> None:
         return
 
     factory = default_engine_factory(stockfish_path())
+    if args.cmd == "backfill":
+        t0 = time.monotonic()
+        while True:
+            res = backfill_details(conn, factory, args.username, args.batch)
+            print(f"{res['backfill_pending']} games left ({time.monotonic() - t0:.0f}s)", flush=True)
+            if res["backfilled_now"] == 0 or res["backfill_pending"] == 0:
+                break
+        return
+
     total = 0
     t0 = time.monotonic()
     while True:
