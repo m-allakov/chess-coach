@@ -20,3 +20,6 @@ engines/
 .claude/
 .mcp.json
 start_dashboard.bat
+
+# DB Browser for SQLite shortcuts (point at this machine's install)
+db-browser/
