@@ -13,7 +13,8 @@ import chess
 import chess.pgn
 
 from .analysis import PV_PLIES
-from .classify import classify, mover_win_pct
+from .classify import classify, mover_win_pct, pct
+from .mates import MISSED_MATE_MAX, is_known, mate_fields
 from .moves import clock_fields, opening_names, outcome, parse_clocks
 
 _HEADER = re.compile(r'\[(\w+) "([^"]*)"\]')
@@ -157,6 +158,7 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
             "san": san, "uci": move.uci(), "fen_before": fen_before,
             "eval_before": None, "eval_after": None, "win_chance_before": None,
             "win_chance_after": None, "wp_loss": None, "class": None,
+            "mate_before_mover": None, "missed_mate": None, "mate_lengthened": None,
             "best_san": None, "best_uci": None,
             "clock_after": round(clocks[i], 1) if clocks else None,
             "time_spent": round(timing["time_spent"], 1) if timing["time_spent"] is not None else None,
@@ -171,10 +173,15 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
             m.update({
                 "eval_before": _eval(p["cp"], extra[i]["mate"] if i in extra else None),
                 "eval_after": _eval(q["cp"], extra[i + 1]["mate"] if i + 1 in extra else None),
-                "win_chance_before": round(wp0, 1), "win_chance_after": round(wp1, 1),
-                "wp_loss": round(loss, 1),
+                "win_chance_before": pct(wp0), "win_chance_after": pct(wp1),
+                "wp_loss": pct(loss),
                 "class": ("best" if move.uci() == p["best_uci"] else "good") if kind == "ok" else kind,
             })
+            m.update(mate_fields(
+                p["turn"], extra[i]["mate"] if i in extra else None,
+                extra[i + 1]["mate"] if i + 1 in extra else None,
+                is_known(detail is not None, i in extra, p["cp"]),
+                is_known(detail is not None, i + 1 in extra, q["cp"])))
             if p["best_uci"] and p["best_uci"] != move.uci():
                 m["best_uci"] = p["best_uci"]
                 m["best_san"] = _san(board, p["best_uci"])
@@ -185,7 +192,8 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
 
     shown = moves
     if only_flagged:
-        flagged = {m["ply"] for m in moves if m["class"] in _FLAGGED}
+        flagged = {m["ply"] for m in moves if m["class"] in _FLAGGED
+                   or (m["missed_mate"] and m["missed_mate"] <= MISSED_MATE_MAX)}
         keep = {q for p in flagged for q in (p - 1, p, p + 1)}
         shown = [{**m, **({} if m["ply"] in flagged else {"context": True})}
                  for m in moves if m["ply"] in keep]
@@ -209,13 +217,17 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
     out = {"meta": meta, "moves": shown}
     if analyzed:
         meta["mate_data"] = "missing" if not detail else "complete" if detail["complete"] else "partial"
-        if meta["mate_data"] != "complete":
+        if meta["mate_data"] == "missing":
             out["note"] = (
                 "Analysed before mate and variation data were stored: cp is clipped at +-1000 and "
-                "may hide a mate, and best_pv_san is only filled for costly moves. "
-                "Run backfill_game_details to fill them in." if meta["mate_data"] == "missing" else
-                "Backfilled: mate and best_pv_san exist only for costly moves and near-decided "
-                "positions (null elsewhere).")
+                "may hide a mate, and best_pv_san is only filled for costly moves. The mate fields "
+                "(mate_before_mover, missed_mate, mate_lengthened) are null because they are "
+                "unknown, not because there was no mate. Run backfill_game_details to fill them in.")
+        elif meta["mate_data"] == "partial":
+            out["note"] = (
+                "Backfilled: mate and best_pv_san exist only for costly moves and positions at 900 cp "
+                "or more (null elsewhere). Below that no mate is assumed, so the mate fields can be "
+                "trusted; best_pv_san is simply absent for quiet moves.")
     elif only_flagged:
         out["note"] = "This game has not been analysed, so no move can be flagged. Run analyze_games."
     return out

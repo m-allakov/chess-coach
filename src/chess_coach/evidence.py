@@ -11,6 +11,7 @@ from collections import Counter, defaultdict
 
 import chess
 
+from .classify import pct
 from .moves import my_moves
 
 WINNING = 75.0          # win chance (%) that counts as a winning position
@@ -80,6 +81,6 @@ def decisive_blunders(conn: sqlite3.Connection, username: str, time_class: str |
         "phase": dict(phases),
         "relaxed_clock_share": round(relaxed / with_clock, 3) if with_clock else None,
         "median_seconds_on_blunder": round(statistics.median(secs), 1) if secs else None,
-        "median_win_chance_before": round(statistics.median(wp_before)),
+        "median_win_chance_before": pct(statistics.median(wp_before)),
         "median_moves_held_before": statistics.median(held),
     }

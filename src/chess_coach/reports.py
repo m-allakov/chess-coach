@@ -8,6 +8,7 @@ from collections import defaultdict
 
 import chess
 
+from .classify import pct
 from .moves import my_moves
 
 _KINDS = {"inaccuracy": "inaccuracies", "mistake": "mistakes", "blunder": "blunders"}
@@ -20,10 +21,10 @@ def _stats(moves: list[dict]) -> dict:
         return {"moves": 0}
     out = {
         "moves": n,
-        "avg_wp_loss": round(sum(m["wp_loss"] for m in moves) / n, 2),
+        "avg_wp_loss": pct(sum(m["wp_loss"] for m in moves) / n, 2),
     }
     for kind, label in _KINDS.items():
-        out[f"{label}_per_100_moves"] = round(100 * sum(m["kind"] == kind for m in moves) / n, 1)
+        out[f"{label}_per_100_moves"] = pct(100 * sum(m["kind"] == kind for m in moves) / n)
     return out
 
 
@@ -104,11 +105,11 @@ def opening_report(conn: sqlite3.Connection, username: str, min_games: int = 3,
         draws = sum(ms[0]["outcome"] == "D" for ms in games)
         rows.append({
             "opening": family, "color": color, "games": len(games),
-            "score_pct": round(100 * (wins + 0.5 * draws) / len(games), 0),
-            "avg_win_chance_leaving_opening": round(sum(exits) / len(exits), 1) if exits else None,
+            "score_pct": pct(100 * (wins + 0.5 * draws) / len(games), 0),
+            "avg_win_chance_leaving_opening": pct(sum(exits) / len(exits)) if exits else None,
             "opening_blunders": sum(m["kind"] == "blunder" for m in opening_moves),
             "opening_mistakes": sum(m["kind"] == "mistake" for m in opening_moves),
-            "avg_wp_loss_in_opening": round(sum(m["wp_loss"] for m in opening_moves) / len(opening_moves), 2)
+            "avg_wp_loss_in_opening": pct(sum(m["wp_loss"] for m in opening_moves) / len(opening_moves), 2)
             if opening_moves else None,
         })
     rows.sort(key=lambda r: (r["score_pct"], r["avg_win_chance_leaving_opening"] or 0))
@@ -206,7 +207,7 @@ def worst_moments(conn: sqlite3.Connection, username: str, n: int = 5,
             "game": m["url"], "move_number": m["move_number"], "color": m["color"], "phase": m["phase"],
             "fen": m["fen"], "played": m["san"], "best": best,
             "played_uci": m["uci"], "best_uci": m["best_uci"],
-            "win_chance_before": round(m["wp_before"], 0), "win_chance_after": round(m["wp_after"], 0),
+            "win_chance_before": pct(m["wp_before"]), "win_chance_after": pct(m["wp_after"]),
             "was_winning": m["wp_before"] >= WINNING,
         })
     return {"shown": len(out), "available": len(moves), "blunders": out}

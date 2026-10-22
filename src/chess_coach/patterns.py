@@ -9,6 +9,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 
+from .classify import pct
 from .coach import FINAL_STRETCH, game_summaries
 from .moves import my_moves
 from .stats import compare_means, compare_rates
@@ -27,9 +28,9 @@ def _block(games: list[dict]) -> dict:
     draws = sum(g["outcome"] == "D" for g in games)
     return {
         "games": n,
-        "score_pct": round(100 * (wins + 0.5 * draws) / n, 1),
-        "blunders_per_100_moves": round(100 * sum(g["blunders"] for g in games) / moves, 1),
-        "lost_on_time_pct": round(100 * sum(g["result_code"] == "timeout" for g in games) / n, 1),
+        "score_pct": pct(100 * (wins + 0.5 * draws) / n),
+        "blunders_per_100_moves": pct(100 * sum(g["blunders"] for g in games) / moves),
+        "lost_on_time_pct": pct(100 * sum(g["result_code"] == "timeout" for g in games) / n),
         "_game_blunder_rates": [100 * g["blunders"] / g["moves"] for g in games],
     }
 
@@ -161,9 +162,9 @@ def resilience_from_games(games: list[dict]) -> dict:
     return {
         "games": len(games),
         "games_clearly_worse_with_play_left": len(worse),
-        "share_of_all_games_pct": round(100 * len(worse) / len(games), 1) if games else None,
+        "share_of_all_games_pct": pct(100 * len(worse) / len(games)) if games else None,
         "won": wins, "drawn": draws, "lost": len(worse) - wins - draws,
-        "saved_pct": round(100 * (wins + draws) / len(worse), 1) if worse else None,
+        "saved_pct": pct(100 * (wins + draws) / len(worse)) if worse else None,
         "definition": f"clearly worse = win chance reached {CLEARLY_WORSE:.0f}% or lower before the "
                       f"last {FINAL_STRETCH} moves of the game",
     }

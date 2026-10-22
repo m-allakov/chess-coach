@@ -6,6 +6,7 @@ import re
 import sqlite3
 
 from .classify import classify, mover_win_pct
+from .mates import is_known, mate_fields
 
 _DRAWS = {"agreed", "repetition", "stalemate", "insufficient", "50move", "timevsinsufficient"}
 _ECO_URL = re.compile(r'\[ECOUrl "[^"]*/openings/([^"]+)"\]')
@@ -89,10 +90,15 @@ def my_moves(conn: sqlite3.Connection, username: str, time_class: str | None = N
     rows = conn.execute(
         f"""SELECT g.url, g.color, g.result, g.time_class, g.time_control, g.my_rating, g.end_time, g.pgn,
                    p.ply, p.fen, p.turn, p.phase, p.move_san, p.move_uci, p.best_uci,
-                   p.cp AS cp0, q.cp AS cp1, p.depth AS d0, q.depth AS d1
+                   p.cp AS cp0, q.cp AS cp1, p.depth AS d0, q.depth AS d1,
+                   dp.ply IS NOT NULL AS has0, dp.mate AS mate0,
+                   dq.ply IS NOT NULL AS has1, dq.mate AS mate1, gd.url IS NOT NULL AS has_detail
             FROM positions p
             JOIN positions q ON q.url = p.url AND q.ply = p.ply + 1
             JOIN games g ON g.url = p.url
+            LEFT JOIN position_detail dp ON dp.url = p.url AND dp.ply = p.ply
+            LEFT JOIN position_detail dq ON dq.url = p.url AND dq.ply = p.ply + 1
+            LEFT JOIN game_detail gd ON gd.url = p.url
             WHERE {' AND '.join(where)}
             ORDER BY g.end_time DESC, p.ply""",
         args,
@@ -127,13 +133,17 @@ def my_moves(conn: sqlite3.Connection, username: str, time_class: str | None = N
             "depth": min(r["d0"], r["d1"]),
             "opening_family": family, "opening": full,
             "result_code": r["result"], **clock,
+            **mate_fields(r["turn"], r["mate0"], r["mate1"],
+                          is_known(r["has_detail"], r["has0"], r["cp0"]),
+                          is_known(r["has_detail"], r["has1"], r["cp1"])),
         })
     return moves
 
 
 def clock_fields(row, clocks: list[float] | None) -> dict:
     """Time left before the move, time spent on it, and the resulting pressure zone."""
-    none = {"clock_before": None, "time_spent": None, "base_time": None, "time_zone": None}
+    none = {"clock_before": None, "clock_after": None, "time_spent": None, "base_time": None,
+            "time_zone": None}
     tc = parse_time_control(row["time_control"])
     if not clocks or not tc:
         return none
@@ -141,5 +151,5 @@ def clock_fields(row, clocks: list[float] | None) -> dict:
     ply = row["ply"]
     before = clocks[ply - 2] if ply >= 2 else base
     spent = max(0.0, before + inc - clocks[ply])
-    return {"clock_before": before, "time_spent": spent, "base_time": base,
+    return {"clock_before": before, "clock_after": clocks[ply], "time_spent": spent, "base_time": base,
             "time_zone": time_zone(before, base)}

@@ -8,6 +8,8 @@ from collections import defaultdict
 
 import chess
 
+from .classify import pct
+from .mates import MISSED_MATE_MAX
 from .moves import my_moves
 
 _VALUE = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 100}
@@ -72,8 +74,8 @@ def missed_opportunities(conn: sqlite3.Connection, username: str, n: int = 5,
             "game": m["url"], "move_number": m["move_number"], "phase": m["phase"], "fen": m["fen"],
             "played": m["san"], "best": best,
             "played_uci": m["uci"], "best_uci": m["best_uci"],
-            "win_chance_before_your_move": round(m["wp_before"], 0),
-            "win_chance_after_your_move": round(m["wp_after"], 0),
+            "win_chance_before_your_move": pct(m["wp_before"]),
+            "win_chance_after_your_move": pct(m["wp_after"]),
             "seconds_spent": round(m["time_spent"], 1) if m["time_spent"] is not None else None,
         })
     return {
@@ -83,10 +85,49 @@ def missed_opportunities(conn: sqlite3.Connection, username: str, n: int = 5,
         "by_phase": {p: dict(v) for p, v in sorted(by_phase.items())},
         "avg_seconds_on_reply": {k: round(sum(v) / len(v), 1) for k, v in spent.items() if v},
         "worst_missed": examples,
+        "missed_mates": missed_mates(everything, n),
         "definitions": {
             "opponent blunder": "a move costing the opponent 15+ win-chance points",
             "punished": f"your next move lost under {PUNISHED_LOSS:.0f} points",
             "missed": f"your next move gave back {MISSED_LOSS:.0f}+ points",
+        },
+    }
+
+
+def missed_mates(moves: list[dict], n: int) -> dict:
+    """Moves where the player had a forced mate and played something that let it go.
+    `moves` may hold both sides' moves; only the player's are looked at."""
+    found = [m for m in moves if m["mine"] and m["missed_mate"]]
+    found.sort(key=lambda m: (m["missed_mate"], -m["end_time"], -m["ply"]))   # shortest first, then newest
+    by_phase = {p: {"total": 0, "short": 0} for p in ("opening", "middlegame", "endgame")}
+    for m in found:
+        by_phase[m["phase"]]["total"] += 1
+        by_phase[m["phase"]]["short"] += m["missed_mate"] <= MISSED_MATE_MAX
+    listed = []
+    for m in found[:n]:
+        board = chess.Board(m["fen"])
+        best = None
+        if m["best_uci"]:
+            try:
+                best = board.san(chess.Move.from_uci(m["best_uci"]))
+            except ValueError:
+                pass
+        listed.append({
+            "game": m["url"], "move_no": m["move_number"], "fen": m["fen"],
+            "played_san": m["san"], "best_san": best, "mate_n": m["missed_mate"],
+            "time_spent": round(m["time_spent"], 1) if m["time_spent"] is not None else None,
+            "clock_after": round(m["clock_after"], 1) if m["clock_after"] is not None else None,
+        })
+    return {
+        "total": len(found),
+        "short": sum(m["missed_mate"] <= MISSED_MATE_MAX for m in found),
+        "by_phase": by_phase,
+        "missed": listed,
+        "definitions": {
+            "missed mate": "you had a forced mate before your move and none after it",
+            "short": f"mate in {MISSED_MATE_MAX} or fewer",
+            "order": "shortest mate first, then newest game",
+            "coverage": "games analysed before mate data was stored count only where it was backfilled",
         },
     }
 
@@ -157,7 +198,7 @@ def sacrifice_candidates(conn: sqlite3.Connection, username: str, n: int = 10,
         "shown": [
             {"game": m["url"], "move_number": m["move_number"], "phase": m["phase"], "fen": m["fen"],
              "played": m["san"], "material_offered_pawns": offered,
-             "win_chance_before": round(m["wp_before"], 0), "win_chance_after": round(m["wp_after"], 0)}
+             "win_chance_before": pct(m["wp_before"]), "win_chance_after": pct(m["wp_after"])}
             for m, offered in found[:n]
         ],
         "note": "Approximates chess.com's brilliant label; expect many ordinary tactical moves.",

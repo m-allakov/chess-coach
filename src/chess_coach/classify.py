@@ -8,6 +8,7 @@ swing counts more where the game is still undecided.
 from __future__ import annotations
 
 import math
+from decimal import ROUND_HALF_UP, Decimal
 
 # Lichess' published cp -> win-chance fit, expressed here in percent.
 _K = 0.00368208
@@ -36,3 +37,10 @@ def classify(wp_loss: float) -> str:
     if wp_loss >= INACCURACY:
         return "inaccuracy"
     return "ok"
+
+
+def pct(x: float, digits: int = 1) -> float:
+    """Round a win chance, win-chance loss or percentage for display: halves go up
+    (97.45 -> 97.5), unlike round(), which goes to the even digit. Output only - classes and
+    thresholds are always compared on the unrounded value."""
+    return float(Decimal(repr(float(x))).quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP))

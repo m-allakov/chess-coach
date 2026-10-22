@@ -12,7 +12,7 @@ from collections import defaultdict
 import chess
 
 from .analysis import search
-from .classify import mover_win_pct
+from .classify import mover_win_pct, pct
 from . import threats
 from .moves import my_moves
 
@@ -46,7 +46,7 @@ def puzzles(conn: sqlite3.Connection, username: str, n: int = 12, time_class: st
         "puzzles": [{
             "id": puzzle_id(m["url"], m["ply"]), "fen": m["fen"], "color": m["color"],
             "phase": m["phase"], "move_number": m["move_number"],
-            "win_chance": round(m["wp_before"]), "game": m["url"],
+            "win_chance": pct(m["wp_before"]), "game": m["url"],
         } for m in pool[:n]],
     }
 
@@ -74,7 +74,7 @@ def erred_puzzles(conn: sqlite3.Connection, username: str, n: int = 12, time_cla
         "available": len(pool), "mode": "erred",
         "puzzles": [{
             "id": puzzle_id(mine["url"], mine["ply"]), "kind": "erred", "fen": mine["fen"], "color": mine["color"],
-            "phase": mine["phase"], "move_number": mine["move_number"], "win_chance": round(mine["wp_before"]),
+            "phase": mine["phase"], "move_number": mine["move_number"], "win_chance": pct(mine["wp_before"]),
             "game": mine["url"], "prev_uci": opp["uci"], "prev_san": opp["san"],
         } for opp, mine in pool[:n]],
     }
@@ -131,6 +131,6 @@ def check(conn: sqlite3.Connection, engine, username: str, pid: str, uci: str) -
         "verdict": verdict, "solved": verdict in ("best", "good"),
         "answer": answer_san, "best": best_san, "best_uci": row["best_uci"],
         "played_in_game": row["move_san"], "played_uci": row["move_uci"],
-        "win_chance_lost": round(loss, 1), "game": row["url"],
+        "win_chance_lost": pct(loss), "game": row["url"],
         "after_your_move": lens,
     }

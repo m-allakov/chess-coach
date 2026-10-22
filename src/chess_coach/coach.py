@@ -7,6 +7,7 @@ from __future__ import annotations
 import sqlite3
 from collections import defaultdict
 
+from .classify import pct
 from . import commentary, evidence, principle_tests, reports
 from .moves import my_moves
 from .stats import compare_means, compare_rates
@@ -98,10 +99,10 @@ def _window_metrics(games: list[dict]) -> dict:
     draws = sum(g["outcome"] == "D" for g in games)
     return {
         "games": n,
-        "score_pct": round(100 * (wins + 0.5 * draws) / n, 1),
-        "blunders_per_100_moves": round(100 * sum(g["blunders"] for g in games) / moves, 1),
-        "lost_on_time_pct_of_games": round(100 * sum(g["result_code"] == "timeout" for g in games) / n, 1),
-        "winning_positions_not_won_pct": round(
+        "score_pct": pct(100 * (wins + 0.5 * draws) / n),
+        "blunders_per_100_moves": pct(100 * sum(g["blunders"] for g in games) / moves),
+        "lost_on_time_pct_of_games": pct(100 * sum(g["result_code"] == "timeout" for g in games) / n),
+        "winning_positions_not_won_pct": pct(
             100 * sum(g["outcome"] != "W" for g in reached) / len(reached), 1) if reached else None,
         # How many observations each percentage rests on; used to judge whether a change is real.
         "sample_sizes": {"score_pct": n, "blunders_per_100_moves": moves,

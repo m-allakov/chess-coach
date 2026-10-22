@@ -91,6 +91,13 @@ def get_game(game: str, ply_from: int | None = None, ply_to: int | None = None,
     - win_chance_before/after and wp_loss (0-100 scale) are from the point of view of the side
       that MADE the move, the same as worst_moments. class is best/good/inaccuracy/mistake/
       blunder, using the same thresholds as the reports. No opening-book detection exists.
+    - Every win chance, loss and percentage in every tool is rounded to 1 decimal, halves up,
+      so the same move reads the same everywhere. Classes use the unrounded value.
+    - mate_before_mover: N when the mover had a forced mate in N before moving. missed_mate: N
+      when the move left no mate for the mover (class is NOT changed by this, a missed mate can
+      still read "good"). mate_lengthened: {"from": N, "to": M} when a mate survives but takes
+      more than N-1 moves. All null when there was no mate or the mate data is unknown (see
+      meta.mate_data and the note). only_flagged also keeps a missed mate of 5 moves or fewer.
     - best_san/best_uci are null when the move played was the engine's best; best_pv_san
       (up to 5 plies, starts with the best move) is still given, or null if not stored.
     - clock_after is seconds left after the move; time_spent includes the increment.
@@ -126,7 +133,8 @@ def time_pressure_report(username: str, time_class: str | None = None,
 @mcp.tool()
 def missed_opportunities(username: str, n: int = 5, time_class: str | None = None,
                          last_n: int | None = None) -> dict:
-    """How often the player used the opponent's blunders, and the costliest chances missed."""
+    """How often the player used the opponent's blunders, and the costliest chances missed.
+    `missed_mates` lists forced mates the player had and let go: shortest mate first, then newest."""
     return opportunities.missed_opportunities(connect(), username, n, time_class, last_n)
 
 

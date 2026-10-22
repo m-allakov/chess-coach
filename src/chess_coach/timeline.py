@@ -8,7 +8,7 @@ from datetime import datetime
 
 import chess
 
-from .classify import BLUNDER, classify, mover_win_pct
+from .classify import BLUNDER, classify, mover_win_pct, pct
 from .moves import opening_names, outcome
 
 
@@ -31,7 +31,7 @@ def game_curves(conn: sqlite3.Connection, username: str, n: int = 60,
         rows = conn.execute("SELECT turn, cp FROM positions WHERE url = ? ORDER BY ply", (g["url"],)).fetchall()
         if len(rows) < 2:
             continue
-        curve = [round(mover_win_pct(r["cp"], g["color"]), 1) for r in rows]
+        curve = [pct(mover_win_pct(r["cp"], g["color"])) for r in rows]
         blunders = [i + 1 for i, r in enumerate(rows[:-1])
                     if r["turn"] == g["color"] and curve[i] - curve[i + 1] >= BLUNDER]
         out.append({
@@ -83,7 +83,7 @@ def game_detail(conn: sqlite3.Connection, username: str, game_id: str) -> dict |
         entry = {
             "ply": r["ply"], "fen": r["fen"], "mover": r["turn"], "mine": r["turn"] == g["color"],
             "san": r["move_san"], "uci": r["move_uci"], "best_uci": r["best_uci"], "best_san": None,
-            "wp": round(mover_win_pct(r["cp"], g["color"]), 1), "kind": None,
+            "wp": pct(mover_win_pct(r["cp"], g["color"])), "kind": None,
         }
         if r["best_uci"]:
             try:
@@ -94,7 +94,7 @@ def game_detail(conn: sqlite3.Connection, username: str, game_id: str) -> dict |
             before = mover_win_pct(r["cp"], r["turn"])
             after = mover_win_pct(rows[i + 1]["cp"], r["turn"])
             entry["kind"] = classify(max(0.0, before - after))
-            entry["loss"] = round(max(0.0, before - after), 1)
+            entry["loss"] = pct(max(0.0, before - after))
         plies.append(entry)
     return {
         "id": game_id, "url": g["url"], "end_time": g["end_time"], "time_class": g["time_class"],
