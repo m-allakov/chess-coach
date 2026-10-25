@@ -25,3 +25,10 @@ def stockfish_path() -> str:
     raise FileNotFoundError(
         "Stockfish not found. Set CHESS_COACH_STOCKFISH or put stockfish on PATH."
     )
+
+
+# Motif tagging (see motifs.py). The engine is only started for a ply whose stored data
+# lacks what a rule needs: the best line after the move, or the opponent's threat before it.
+MOTIF_FILL_DEPTH = 14        # fixed search depth for a missing best line
+MOTIF_THREAT_DEPTH = 12      # fixed search depth for the null-move threat probe
+MOTIF_SEARCH_SECONDS = 3.0   # hard cap per search

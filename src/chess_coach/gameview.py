@@ -5,6 +5,7 @@ Everything here reads what is already stored; no engine is started."""
 from __future__ import annotations
 
 import io
+import json
 import re
 import sqlite3
 from datetime import datetime, timezone
@@ -15,6 +16,7 @@ import chess.pgn
 from .analysis import PV_PLIES
 from .classify import classify, mover_win_pct, pct
 from .mates import MISSED_MATE_MAX, is_known, keeps_mate, mate_fields
+from .motifs import MOTIF_VERSION, in_scope
 from .moves import clock_fields, opening_names, outcome, parse_clocks
 
 _HEADER = re.compile(r'\[(\w+) "([^"]*)"\]')
@@ -145,6 +147,11 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
     extra = {r["ply"]: r for r in conn.execute("SELECT * FROM position_detail WHERE url = ?", (url,))}
     analyzed = bool(run) and len(rows) == len(played) + 1
 
+    tagged = {r["ply"]: r for r in conn.execute(
+        "SELECT ply, tags, details FROM move_motif WHERE url = ? AND version = ?", (url, MOTIF_VERSION))}
+    motifs_done = conn.execute("SELECT 1 FROM motif_game WHERE url = ? AND version = ?",
+                               (url, MOTIF_VERSION)).fetchone() is not None
+
     clocks = parse_clocks(g["pgn"])
     clocks = clocks if len(clocks) >= len(played) else None
     base = {"time_control": g["time_control"]}
@@ -158,7 +165,7 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
             "san": san, "uci": move.uci(), "fen_before": fen_before,
             "eval_before": None, "eval_after": None, "win_chance_before": None,
             "win_chance_after": None, "wp_loss": None, "class": None,
-            "mate_before_mover": None, "missed_mate": None, "mate_lengthened": None,
+            "mate_before_mover": None, "missed_mate": None, "mate_lengthened": None, "motifs": None,
             "best_san": None, "best_uci": None,
             "clock_after": round(clocks[i], 1) if clocks else None,
             "time_spent": round(timing["time_spent"], 1) if timing["time_spent"] is not None else None,
@@ -185,6 +192,13 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
             mating = keeps_mate(*mates)       # as fast a mate as the engine's: not worse than its pick
             if mating and kind == "ok":
                 m["class"] = "best"
+            if i in tagged:
+                m["motifs"] = json.loads(tagged[i]["tags"])
+                details = json.loads(tagged[i]["details"])
+                if details:
+                    m["motif_details"] = details
+            elif not in_scope(kind, m["missed_mate"]):
+                m["motifs"] = []          # nothing to tag on a move this cheap
             if p["best_uci"] and p["best_uci"] != move.uci() and not mating:
                 m["best_uci"] = p["best_uci"]
                 m["best_san"] = _san(board, p["best_uci"])
@@ -216,6 +230,7 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
         "engine": (detail["engine"] if detail and detail["engine"] else "Stockfish") if analyzed else None,
         "engine_depth": run["deep_depth"] if analyzed else None,
         "total_plies": len(played),
+        "motifs_tagged": motifs_done,
     }
     out = {"meta": meta, "moves": shown}
     if analyzed:

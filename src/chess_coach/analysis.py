@@ -47,7 +47,7 @@ def _clip(cp: int) -> int:
 
 
 def search_detail(engine, board: chess.Board, depth: int,
-                  root_moves: list[chess.Move] | None = None) -> dict:
+                  root_moves: list[chess.Move] | None = None, seconds: float | None = None) -> dict:
     """Search one position. Returns white-POV `cp` (clipped), `best_uci`, `mate` (moves to
     mate, + = White mates, None = no forced mate, 0 = already checkmate) and `pv` (UCI).
 
@@ -59,7 +59,7 @@ def search_detail(engine, board: chess.Board, depth: int,
                     "best_uci": None, "mate": 0, "pv": []}
         return {"cp": 0, "best_uci": None, "mate": None, "pv": []}
     extra = {"root_moves": root_moves} if root_moves else {}
-    info = engine.analyse(board, chess.engine.Limit(depth=depth), **extra)
+    info = engine.analyse(board, chess.engine.Limit(depth=depth, time=seconds), **extra)
     score = info["score"].white()
     pv = [m.uci() for m in info.get("pv", [])[:PV_PLIES]]
     return {"cp": _clip(score.score(mate_score=MATE_CP)), "best_uci": pv[0] if pv else None,
@@ -166,11 +166,13 @@ def analyze_pending(
     max_seconds: float | None = None,
     fast_depth: int = FAST_DEPTH,
     deep_depth: int = DEEP_DEPTH,
+    saved: list[str] | None = None,
 ) -> dict:
     """Analyse up to `limit` not-yet-analysed games, newest first.
 
     Stops starting new games after `max_seconds` so callers (MCP tool calls)
-    can return promptly; call again to continue where it left off.
+    can return promptly; call again to continue where it left off. If `saved` is given, the
+    url of every game analysed now is appended to it.
     """
     rows = conn.execute(
         """SELECT url, pgn FROM games
@@ -188,12 +190,14 @@ def analyze_pending(
     def save(result):
         url, positions, refined, secs, engine_name = result
         _save(conn, url, positions, refined, secs, fast_depth, deep_depth, engine_name)
+        if saved is not None:
+            saved.append(url)
 
-    done = _run_pool(rows, engine_factory, workers, max_seconds, job, save)
+    done = run_pool(rows, engine_factory, workers, max_seconds, job, save)
     return {"analyzed_now": done, **status(conn, username)}
 
 
-def _run_pool(rows, engine_factory, workers, max_seconds, job, save) -> int:
+def run_pool(rows, engine_factory, workers, max_seconds, job, save) -> int:
     """Run `job(engine, row)` over `rows` on a pool of engines and `save` each result
     on the calling thread. Stops starting new rows after `max_seconds`."""
     workers = workers or max(1, min(4, (os.cpu_count() or 4) // 4))
@@ -271,7 +275,7 @@ def backfill_details(conn: sqlite3.Connection, engine_factory, username: str, li
                      (url, engine_name))
         conn.commit()
 
-    done = _run_pool(jobs, engine_factory, workers, max_seconds, job, save)
+    done = run_pool(jobs, engine_factory, workers, max_seconds, job, save)
     pending = conn.execute(f"SELECT COUNT(*) {_BACKFILL_SCOPE}", (username.lower(),)).fetchone()[0]
     return {"backfilled_now": done, "backfill_pending": pending}
 

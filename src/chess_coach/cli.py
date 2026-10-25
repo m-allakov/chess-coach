@@ -10,6 +10,7 @@ from .chesscom import ChessComClient
 from .config import stockfish_path
 from .db import connect
 from .sync import sync_games
+from .tagging import tag_pending
 
 
 def main() -> None:
@@ -29,6 +30,10 @@ def main() -> None:
     b.add_argument("username")
     b.add_argument("--batch", type=int, default=25, help="games per round")
 
+    t = sub.add_parser("tag", help="tag costly moves with motifs (hanging pieces, forks, missed captures...)")
+    t.add_argument("username")
+    t.add_argument("--batch", type=int, default=25, help="games per round")
+
     args = parser.parse_args()
     conn = connect()
 
@@ -47,6 +52,17 @@ def main() -> None:
             res = backfill_details(conn, factory, args.username, args.batch)
             print(f"{res['backfill_pending']} games left ({time.monotonic() - t0:.0f}s)", flush=True)
             if res["backfilled_now"] == 0 or res["backfill_pending"] == 0:
+                break
+        return
+
+    if args.cmd == "tag":
+        t0 = time.monotonic()
+        while True:
+            res = tag_pending(conn, factory, args.username, args.batch)
+            print(f"{res['motif_pending']} games left ({time.monotonic() - t0:.0f}s, "
+                  f"{res['engine_searches']['best_line_fills']} line fills, "
+                  f"{res['engine_searches']['threat_probes']} threat probes)", flush=True)
+            if res["tagged_now"] == 0 or res["motif_pending"] == 0:
                 break
         return
 

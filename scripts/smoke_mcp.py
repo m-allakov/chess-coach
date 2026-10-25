@@ -35,6 +35,9 @@ CALLS = [
     ("get_game", {"game": "185407637314", "username": USER, "only_flagged": True}),
     ("get_game", {"game": "https://www.chess.com/game/live/185407637314", "username": USER}),
     ("backfill_game_details", {"username": USER, "batch_size": 1, "max_seconds": 60}),
+    ("tag_motifs", {"username": USER, "batch_size": 3, "max_seconds": 60}),
+    ("motif_report", {"username": USER, "time_class": "blitz", "last_n": 50}),
+    ("conversion_report", {"username": USER, "time_class": "blitz", "last_n": 50, "n": 3}),
     ("sync_games", {"username": USER, "months": 1}),
     ("analyze_games", {"username": USER, "batch_size": 3, "max_seconds": 60}),
 ]

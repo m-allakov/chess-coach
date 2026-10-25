@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from . import coach, gameview, opportunities, patterns, peers, reports
+from . import coach, gameview, motifreport, opportunities, patterns, peers, reports
 from .analysis import analyze_pending, backfill_details, default_engine_factory
 from .analysis import status as analysis_progress
 from .chesscom import ChessComClient
 from .config import stockfish_path
 from .db import connect
 from .sync import sync_games as _sync_games
+from .tagging import tag_pending
 
 mcp = FastMCP("chess-coach")
 
@@ -31,15 +32,53 @@ def sync_games(username: str, months: int = 3) -> dict:
 
 @mcp.tool()
 def analyze_games(username: str, batch_size: int = 25, max_seconds: float = 45) -> dict:
-    """Analyse not-yet-analysed games with Stockfish, newest first.
+    """Analyse not-yet-analysed games with Stockfish, newest first, and tag their costly moves
+    with motifs (see tag_motifs).
 
     Works in small batches so one call stays fast; call again to continue.
     Returns progress counts only. Use sync_games first to download games.
     """
-    return analyze_pending(
-        connect(), default_engine_factory(stockfish_path()), username,
-        limit=batch_size, max_seconds=max_seconds,
-    )
+    conn, factory = connect(), default_engine_factory(stockfish_path())
+    saved: list[str] = []
+    result = analyze_pending(conn, factory, username, limit=batch_size, max_seconds=max_seconds, saved=saved)
+    if saved:
+        result.update(tag_pending(conn, factory, username, limit=len(saved), max_seconds=max_seconds, urls=saved))
+    return result
+
+
+@mcp.tool()
+def tag_motifs(username: str, batch_size: int = 25, max_seconds: float = 45) -> dict:
+    """Tag the costly moves (mistakes, blunders, short mates let go) of analysed games with the
+    kind of error they are: moved_piece_hangs, left_piece_hanging, missed_capture, missed_check,
+    missed_mate, allowed_fork, allowed_discovered_attack, allowed_pin_or_skewer, ignored_threat,
+    or untagged. Newest games first, in batches; call again until motif_pending is 0.
+    Reads the stored analysis; Stockfish is asked only for a ply whose line was never stored,
+    once, at a fixed depth (engine_searches says how many)."""
+    return tag_pending(connect(), default_engine_factory(stockfish_path()), username,
+                       limit=batch_size, max_seconds=max_seconds)
+
+
+@mcp.tool()
+def motif_report(username: str, last_n: int | None = None, time_class: str | None = None,
+                 color: str | None = None, phase: str | None = None, min_class: str = "mistake",
+                 n_examples: int = 3) -> dict:
+    """What kinds of costly moves the player makes: counts, share and average win-chance loss per
+    motif tag, split by phase, pace (hasty / considered / short of time) and colour, plus the
+    newest and costliest examples of each. A move can carry several tags, so shares can add up to
+    more than 100%; untagged_share_pct is the part no rule explains. min_class is "mistake" or
+    "blunder". pending_moves counts costly moves in games not tagged yet (run tag_motifs)."""
+    return motifreport.motif_report(connect(), username, last_n, time_class, color, phase,
+                                    min_class, n_examples)
+
+
+@mcp.tool()
+def conversion_report(username: str, last_n: int | None = None, time_class: str | None = None,
+                      color: str | None = None, threshold: float = 75.0, n: int = 10) -> dict:
+    """Games where the player reached a winning position (win chance >= threshold, counted as
+    weakness_report counts it) and did not win: how often, how they ended, which move collapsed
+    the position (phase, clock, motif tags), when the win chance fell below 50 for good, and the
+    newest n such games with the details. collapse_type is single, time, gradual or other."""
+    return motifreport.conversion_report(connect(), username, last_n, time_class, color, threshold, n)
 
 
 @mcp.tool()
@@ -98,6 +137,10 @@ def get_game(game: str, ply_from: int | None = None, ply_to: int | None = None,
       still read "good"). mate_lengthened: {"from": N, "to": M} when a mate survives but takes
       more than N-1 moves. All null when there was no mate or the mate data is unknown (see
       meta.mate_data and the note). only_flagged also keeps a missed mate of 5 moves or fewer.
+    - motifs: why a costly move (mistake, blunder, or a mate of 5 moves or fewer let go) was
+      costly, e.g. ["moved_piece_hangs"], ["untagged"] when no rule fits. [] = not costly enough to
+      tag; null = costly but not tagged yet (run tag_motifs). motif_details carries extras such as
+      {"allowed_fork": {"with_check": true}}.
     - best_san/best_uci are null when the move played was the engine's best; best_pv_san
       (up to 5 plies, starts with the best move) is still given, or null if not stored.
     - clock_after is seconds left after the move; time_spent includes the increment.

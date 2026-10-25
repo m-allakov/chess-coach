@@ -70,6 +70,35 @@ CREATE TABLE IF NOT EXISTS game_detail (
     complete INTEGER NOT NULL
 );
 
+-- Motif tags (motifs.py). One row per tagged move; ply is the position before the move, as in
+-- `positions`. tags is a JSON list, details a JSON object. A game is done when motif_game holds
+-- the current rule version for it; changing the rules bumps the version and re-tags the game.
+CREATE TABLE IF NOT EXISTS move_motif (
+    url     TEXT NOT NULL,
+    ply     INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    tags    TEXT NOT NULL,
+    details TEXT NOT NULL,
+    PRIMARY KEY (url, ply)
+);
+CREATE TABLE IF NOT EXISTS motif_game (
+    url       TEXT PRIMARY KEY,
+    version   INTEGER NOT NULL,
+    tagged_at INTEGER NOT NULL
+);
+
+-- Engine line for "what if the mover had passed": the opponent's best continuation from the
+-- position before a move, searched once at a fixed depth and never again.
+CREATE TABLE IF NOT EXISTS threat_probe (
+    url   TEXT NOT NULL,
+    ply   INTEGER NOT NULL,
+    depth INTEGER NOT NULL,
+    cp    INTEGER NOT NULL,
+    mate  INTEGER,
+    pv    TEXT NOT NULL,
+    PRIMARY KEY (url, ply)
+);
+
 -- Exercise schedule (spaced repetition), one row per player and position.
 CREATE TABLE IF NOT EXISTS practice (
     username   TEXT NOT NULL,
