@@ -4,7 +4,11 @@ Reads chess.com's brilliant moves (gameid:move pairs) and looks each one up amon
 the analysed games, printing the features our detector uses so the definition can be
 tuned against ground truth.
 
-Usage: python scripts/calibrate_brilliant.py <db> <stockfish.exe>
+The list is read from scripts/chesscom_brilliants.txt, a local file that is not committed: one
+line of comma-separated gameid:move pairs copied from the player's chess.com "Brilliant Moves"
+stats page (lines starting with # are ignored).
+
+Usage: python scripts/calibrate_brilliant.py <db> <stockfish.exe> <username>
 """
 
 from __future__ import annotations
@@ -28,9 +32,9 @@ def load() -> list[tuple[str, int]]:
 
 
 def main() -> None:
-    db, sf = sys.argv[1], sys.argv[2]
+    db, sf, username = sys.argv[1], sys.argv[2], sys.argv[3]
     conn = connect(db)
-    moves = my_moves(conn, "sample_player")
+    moves = my_moves(conn, username)
     by_key = {(m["url"].rsplit("/", 1)[-1], m["ply"]): m for m in moves}
     games = {k[0] for k in by_key}
     truth = load()

@@ -1,7 +1,9 @@
 """End-to-end smoke test: start the MCP server over stdio and call its tools the way a
 real MCP client (Claude Desktop/Code) would.
 
-Usage: python scripts/smoke_mcp.py <db> [username]
+The get_game calls use the newest game that list_games returns.
+
+Usage: python scripts/smoke_mcp.py <db> <username>
 """
 
 from __future__ import annotations
@@ -16,7 +18,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 DB = sys.argv[1]
-USER = sys.argv[2] if len(sys.argv) > 2 else "sample_player"
+USER = sys.argv[2]
+LATEST_ID, LATEST_URL = "<latest game id>", "<latest game link>"   # filled in from list_games
 
 CALLS = [
     ("analysis_status", {"username": USER}),
@@ -32,8 +35,8 @@ CALLS = [
     ("missed_opportunities", {"username": USER, "n": 3}),
     ("sacrifice_candidates", {"username": USER, "n": 3}),
     ("list_games", {"username": USER, "n": 3, "time_class": "blitz"}),
-    ("get_game", {"game": "185407637314", "username": USER, "only_flagged": True}),
-    ("get_game", {"game": "https://www.chess.com/game/live/185407637314", "username": USER}),
+    ("get_game", {"game": LATEST_ID, "username": USER, "only_flagged": True}),
+    ("get_game", {"game": LATEST_URL, "username": USER}),
     ("backfill_game_details", {"username": USER, "batch_size": 1, "max_seconds": 60}),
     ("tag_motifs", {"username": USER, "batch_size": 3, "max_seconds": 60}),
     ("motif_report", {"username": USER, "time_class": "blitz", "last_n": 50}),
@@ -55,7 +58,9 @@ async def main() -> None:
             print(f"server exposes {len(tools)} tools: {', '.join(t.name for t in tools)}\n")
             print(f"{'tool':<22}{'seconds':>8}{'chars':>8}  result")
             failures = 0
+            latest: dict[str, str] = {}
             for name, args in CALLS:
+                args = {k: latest.get(v, v) if isinstance(v, str) else v for k, v in args.items()}
                 t0 = time.perf_counter()
                 result = await session.call_tool(name, args)
                 secs = time.perf_counter() - t0
@@ -66,6 +71,9 @@ async def main() -> None:
                 except ValueError:
                     ok = False
                 failures += not ok
+                if name == "list_games" and ok and json.loads(text)["games"]:
+                    newest = json.loads(text)["games"][0]
+                    latest = {LATEST_ID: newest["game_id"], LATEST_URL: newest["url"]}
                 preview = text[:90].replace("\n", " ")
                 print(f"{name:<22}{secs:>8.1f}{len(text):>8}  {'OK ' if ok else 'FAIL'} {preview}")
             print(f"\n{len(CALLS) - failures}/{len(CALLS)} calls returned valid JSON")

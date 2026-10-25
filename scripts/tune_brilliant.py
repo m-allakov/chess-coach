@@ -4,7 +4,7 @@ For every analysed move of the player, compute cheap features, then report how m
 of chess.com's brilliants each rule finds (recall) and how many other moves it also
 flags (precision). Ground truth only covers the analysed 3-month window.
 
-Usage: python scripts/tune_brilliant.py <db>
+Usage: python scripts/tune_brilliant.py <db> <username>
 """
 
 from __future__ import annotations
@@ -18,10 +18,10 @@ from chess_coach.opportunities import sacrificed_material as offered
 
 
 def main() -> None:
-    conn = connect(sys.argv[1])
+    conn, username = connect(sys.argv[1]), sys.argv[2]
     truth = {(g, n) for g, n in load()}
-    moves = [m for m in my_moves(conn, "sample_player") if m["uci"] and m["wp_loss"] <= 10]
-    window = {m["url"].rsplit("/", 1)[-1] for m in my_moves(conn, "sample_player")}
+    moves = [m for m in my_moves(conn, username) if m["uci"] and m["wp_loss"] <= 10]
+    window = {m["url"].rsplit("/", 1)[-1] for m in my_moves(conn, username)}
     truth = {t for t in truth if t[0] in window}
     print(f"{len(moves)} candidate moves (loss <= 10), {len(truth)} chess.com brilliants in window")
 

@@ -37,3 +37,6 @@ db-browser/
 
 # Pre-public report (names the author's account and e-mail)
 PUBLISH_PREP.md
+
+# Personal ground-truth list for the brilliant-move scripts (game ids of one player)
+scripts/chesscom_brilliants.txt

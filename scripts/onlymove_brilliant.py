@@ -1,7 +1,7 @@
 """Is a chess.com brilliant 'hard to find'? Measure how much worse the 2nd and 3rd
 best moves are in the candidate positions (MultiPV).
 
-Usage: PYTHONPATH=scripts python scripts/onlymove_brilliant.py <db> <stockfish.exe>
+Usage: PYTHONPATH=scripts python scripts/onlymove_brilliant.py <db> <stockfish.exe> <username>
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ DEPTH, LINES = 14, 3
 
 def main() -> None:
     conn = connect(sys.argv[1])
-    allm = my_moves(conn, "sample_player")
+    allm = my_moves(conn, sys.argv[3])
     window = {m["url"].rsplit("/", 1)[-1] for m in allm}
     truth = {t for t in load() if t[0] in window}
 

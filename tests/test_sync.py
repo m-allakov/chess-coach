@@ -28,7 +28,7 @@ class FakeClient:
 
 
 def test_game_row_uses_players_perspective():
-    row = game_row(_game(white="rival", black="sample_player"), "sample_player")
+    row = game_row(_game(white="rival", black="Sample_Player"), "sample_player")
     assert row["color"] == "black"
     assert row["my_rating"] == 790
 

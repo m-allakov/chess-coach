@@ -4,7 +4,7 @@ Looks only at moves that already pass the loose rule (offers a piece, within 5 w
 of best, not worse than 50% after) and compares the 39 chess.com brilliants among them
 with the rest.
 
-Usage: PYTHONPATH=scripts python scripts/crosstab_brilliant.py <db>
+Usage: PYTHONPATH=scripts python scripts/crosstab_brilliant.py <db> <username>
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ def mean(xs):
 
 def main() -> None:
     conn = connect(sys.argv[1])
-    allm = my_moves(conn, "sample_player")
+    allm = my_moves(conn, sys.argv[2])
     window = {m["url"].rsplit("/", 1)[-1] for m in allm}
     truth = {t for t in load() if t[0] in window}
 
