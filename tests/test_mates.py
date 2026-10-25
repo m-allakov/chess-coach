@@ -4,7 +4,7 @@ from test_gameview import RUY, _add, _pgn, _seed_analysis
 from chess_coach import gameview, opportunities, reports
 from chess_coach.classify import classify, pct
 from chess_coach.db import connect
-from chess_coach.mates import MISSED_MATE_MAX, for_mover, is_known, mate_fields
+from chess_coach.mates import MISSED_MATE_MAX, for_mover, is_known, keeps_mate, mate_fields
 
 KNOWN = dict(known_before=True, known_after=True)
 
@@ -173,3 +173,58 @@ def test_missed_mates_follow_the_existing_filters():
     assert ids(time_class="blitz") == ["3", "1"]
     assert ids(last_n=1) == ["2"]                   # the newest analysed game only
     assert opportunities.missed_opportunities(conn, "me", n=1)["missed_mates"]["total"] == 3   # n only trims the list
+
+
+# --- an equally fast mate is as good as the engine's pick ------------------------------------
+
+def test_keeps_mate_counts_checkmate_and_the_shortest_continuation():
+    assert keeps_mate("black", -1, 0, **KNOWN)                 # checkmate delivered
+    assert keeps_mate("white", 3, 2, **KNOWN) and keeps_mate("black", -3, -2, **KNOWN)
+    assert not keeps_mate("white", 3, 3, **KNOWN)              # a tempo lost
+    assert not keeps_mate("white", 3, None, **KNOWN)           # mate thrown away
+    assert not keeps_mate("white", None, None, **KNOWN)        # there was no mate to keep
+    assert not keeps_mate("white", 3, 2, known_before=True, known_after=False)
+
+
+def test_a_different_mating_move_than_the_engines_is_still_best():
+    fools = _pgn("1. f3 e5 2. g4 Qh4# 0-1", tc="180")
+    # the engine named another move at the position before 2...Qh4#
+    conn = _game({3: -1, 4: 0}, cps=[20, 20, 20, -997, -1000], pgn=fools, color="black")
+    conn.execute("UPDATE positions SET best_uci = 'a7a6' WHERE ply = 3")
+    conn.commit()
+    last = _by_ply(conn)[4]
+    assert (last["san"], last["class"], last["best_san"], last["best_uci"]) == ("Qh4#", "best", None, None)
+    assert last["wp_loss"] == 0.0
+
+
+def test_a_mate_one_move_shorter_is_best_but_a_lengthened_mate_is_not():
+    shorter = _game({4: 3, 5: 2}, cps=[997] * 11)
+    conn_best = shorter
+    conn_best.execute("UPDATE positions SET best_uci = 'f1c4' WHERE ply = 4")
+    conn_best.commit()
+    m = _by_ply(conn_best)[5]
+    assert (m["san"], m["class"], m["best_san"]) == ("Bb5", "best", None)
+
+    longer = _game({4: 3, 5: 3}, cps=[997] * 11)
+    longer.execute("UPDATE positions SET best_uci = 'f1c4' WHERE ply = 4")
+    longer.commit()
+    m = _by_ply(longer)[5]
+    assert (m["class"], m["best_san"], m["mate_lengthened"]) == ("good", "Bc4", {"from": 3, "to": 3})
+
+
+def test_a_move_that_threw_the_mate_away_keeps_its_class_and_best_move():
+    conn = _game({4: 3}, cps=[997] * 4 + [997, 20, 20, 20, 20, 20, 20])
+    conn.execute("UPDATE positions SET best_uci = 'f1c4' WHERE ply = 4")
+    conn.commit()
+    m = _by_ply(conn)[5]
+    assert m["class"] == "blunder" and m["best_san"] == "Bc4" and m["missed_mate"] == 3
+
+
+def test_reports_see_the_equally_fast_mate_as_the_best_move():
+    from chess_coach.moves import my_moves
+    fools = _pgn("1. f3 e5 2. g4 Qh4# 0-1", tc="180")
+    conn = _game({3: -1, 4: 0}, cps=[20, 20, 20, -997, -1000], pgn=fools, color="black")
+    conn.execute("UPDATE positions SET best_uci = 'a7a6' WHERE ply = 3")
+    conn.commit()
+    mate = [m for m in my_moves(conn, "me") if m["san"] == "Qh4#"][0]
+    assert mate["best_uci"] == mate["uci"] == "d8h4"

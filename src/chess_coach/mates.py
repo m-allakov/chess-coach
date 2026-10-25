@@ -28,6 +28,21 @@ def for_mover(mate: int | None, color: str) -> int | None:
     return n if n > 0 else None
 
 
+def keeps_mate(color: str, mate_before: int | None, mate_after: int | None,
+               known_before: bool, known_after: bool) -> bool:
+    """The mover had a forced mate and the move delivered checkmate or kept it at its shortest.
+
+    The engine names one mating move, but every move that mates just as fast is as good: when
+    it picks Bxg2# the player's Qxg2# is no worse, so such a move counts as the best one."""
+    n = for_mover(mate_before, color) if known_before else None
+    if n is None or not known_after:
+        return False
+    if mate_after == 0:
+        return True
+    kept = for_mover(mate_after, color)
+    return kept is not None and kept <= n - 1
+
+
 def mate_fields(color: str, mate_before: int | None, mate_after: int | None,
                 known_before: bool, known_after: bool) -> dict:
     """What the move did to the mover's own mate, if it had one.

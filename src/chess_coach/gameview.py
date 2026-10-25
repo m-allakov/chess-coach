@@ -14,7 +14,7 @@ import chess.pgn
 
 from .analysis import PV_PLIES
 from .classify import classify, mover_win_pct, pct
-from .mates import MISSED_MATE_MAX, is_known, mate_fields
+from .mates import MISSED_MATE_MAX, is_known, keeps_mate, mate_fields
 from .moves import clock_fields, opening_names, outcome, parse_clocks
 
 _HEADER = re.compile(r'\[(\w+) "([^"]*)"\]')
@@ -177,12 +177,15 @@ def get_game(conn: sqlite3.Connection, game: str, ply_from: int | None = None,
                 "wp_loss": pct(loss),
                 "class": ("best" if move.uci() == p["best_uci"] else "good") if kind == "ok" else kind,
             })
-            m.update(mate_fields(
-                p["turn"], extra[i]["mate"] if i in extra else None,
-                extra[i + 1]["mate"] if i + 1 in extra else None,
-                is_known(detail is not None, i in extra, p["cp"]),
-                is_known(detail is not None, i + 1 in extra, q["cp"])))
-            if p["best_uci"] and p["best_uci"] != move.uci():
+            mates = (p["turn"], extra[i]["mate"] if i in extra else None,
+                     extra[i + 1]["mate"] if i + 1 in extra else None,
+                     is_known(detail is not None, i in extra, p["cp"]),
+                     is_known(detail is not None, i + 1 in extra, q["cp"]))
+            m.update(mate_fields(*mates))
+            mating = keeps_mate(*mates)       # as fast a mate as the engine's: not worse than its pick
+            if mating and kind == "ok":
+                m["class"] = "best"
+            if p["best_uci"] and p["best_uci"] != move.uci() and not mating:
                 m["best_uci"] = p["best_uci"]
                 m["best_san"] = _san(board, p["best_uci"])
             if include_pv and i in extra and extra[i]["pv"]:

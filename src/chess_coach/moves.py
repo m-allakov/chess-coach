@@ -6,7 +6,7 @@ import re
 import sqlite3
 
 from .classify import classify, mover_win_pct
-from .mates import is_known, mate_fields
+from .mates import is_known, keeps_mate, mate_fields
 
 _DRAWS = {"agreed", "repetition", "stalemate", "insufficient", "50move", "timevsinsufficient"}
 _ECO_URL = re.compile(r'\[ECOUrl "[^"]*/openings/([^"]+)"\]')
@@ -121,21 +121,22 @@ def my_moves(conn: sqlite3.Connection, username: str, time_class: str | None = N
         wp1 = mover_win_pct(r["cp1"], r["turn"])
         loss = max(0.0, wp0 - wp1)
         family, full = openings[r["url"]]
+        known0, known1 = is_known(r["has_detail"], r["has0"], r["cp0"]), is_known(r["has_detail"], r["has1"], r["cp1"])
+        # An equally fast mate is as good as the engine's own pick.
+        best_uci = r["move_uci"] if keeps_mate(r["turn"], r["mate0"], r["mate1"], known0, known1) else r["best_uci"]
         moves.append({
             "url": r["url"], "color": r["color"], "mine": r["turn"] == r["color"],
             "time_class": r["time_class"], "time_control": r["time_control"], "my_rating": r["my_rating"],
             "end_time": r["end_time"],
             "outcome": outcome(r["result"]), "ply": r["ply"], "move_number": r["ply"] // 2 + 1,
             "phase": r["phase"], "fen": r["fen"], "san": r["move_san"], "uci": r["move_uci"],
-            "best_uci": r["best_uci"],
+            "best_uci": best_uci,
             "cp_before": r["cp0"], "cp_after": r["cp1"],
             "wp_before": wp0, "wp_after": wp1, "wp_loss": loss, "kind": classify(loss),
             "depth": min(r["d0"], r["d1"]),
             "opening_family": family, "opening": full,
             "result_code": r["result"], **clock,
-            **mate_fields(r["turn"], r["mate0"], r["mate1"],
-                          is_known(r["has_detail"], r["has0"], r["cp0"]),
-                          is_known(r["has_detail"], r["has1"], r["cp1"])),
+            **mate_fields(r["turn"], r["mate0"], r["mate1"], known0, known1),
         })
     return moves
 
