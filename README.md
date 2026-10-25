@@ -1,5 +1,7 @@
 # chess-coach
 
+[![tests](https://github.com/m-allakov/chess-coach/actions/workflows/tests.yml/badge.svg)](https://github.com/m-allakov/chess-coach/actions/workflows/tests.yml)
+
 **Why am I not winning more of my chess.com games, and what should I practise this week?**
 
 chess-coach downloads a player's chess.com games, checks every move with Stockfish, and serves
