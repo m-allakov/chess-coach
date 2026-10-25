@@ -19,7 +19,7 @@ timings come from different games and engine settings, so no ratio is given
 
 > *"Why am I not winning my blitz games?"* → the client calls `coach_plan(username, time_class="blitz")`
 
-Real output from the author's last 100 blitz games, trimmed (game links removed):
+Real output from my last 100 blitz games, trimmed (game links removed):
 
 ```json
 {
@@ -80,7 +80,7 @@ flowchart LR
 
 ### Knowledge layer
 
-`coach_plan` attaches short practice advice to the weekly focus. On the author's machine that
+`coach_plan` attaches short practice advice to the weekly focus. On my machine that
 advice comes from principles written from chess-training books. **That full set is kept private for
 copyright reasons.** This repository ships the code, the schema, a bibliography (titles and
 authors) and five [example principles](examples/knowledge). The examples are written in original
@@ -149,7 +149,7 @@ wording and are marked as drafts. When the private set is absent, the code loads
 
 ## Numbers
 
-All numbers come from the author's local database or from the files in [docs/evidence](docs/evidence).
+All numbers come from my local database or from the files in [docs/evidence](docs/evidence).
 
 | | |
 |---|---|

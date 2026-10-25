@@ -50,7 +50,7 @@ Principle record (one JSON object per line):
 | `app_hooks` | features that use it (report, drill, explanation) |
 | `status` | candidate, supported_by_data, refuted_by_data, untestable |
 
-Rules: no book text is copied into the repository or the app; the source files stay on the author's
+Rules: no book text is copied into the repository or the app; the source files stay on my
 machine; every principle that makes a testable prediction gets an evaluation before it drives a feature.
 
 ## Evaluation plan
@@ -62,7 +62,7 @@ machine; every principle that makes a testable prediction gets an evaluation bef
 - Principle tests (partly done): do the book-derived predictions hold in the player's data? Two are implemented.
 
 ## Data and licensing notes
-- The author's games, opponents' public games, and the local analysis databases are not published.
+- My games, opponents' public games, and the local analysis databases are not published.
 - Stockfish is GPL-licensed and is downloaded by the user, not redistributed.
 - Reference books are used for private study; they are not part of this repository, and neither is the
   principle set written from them (kept in `private/knowledge/`, ignored by git).
