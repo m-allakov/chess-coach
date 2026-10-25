@@ -1,0 +1,25 @@
+[1/12] blitz 93 plies, elapsed 188s
+[2/12] blitz 113 plies, elapsed 330s
+[3/12] blitz 93 plies, elapsed 463s
+[4/12] blitz 65 plies, elapsed 555s
+[5/12] blitz 51 plies, elapsed 594s
+[6/12] blitz 35 plies, elapsed 642s
+[7/12] blitz 106 plies, elapsed 784s
+[8/12] blitz 47 plies, elapsed 830s
+[9/12] blitz 87 plies, elapsed 894s
+[10/12] blitz 77 plies, elapsed 976s
+[11/12] blitz 48 plies, elapsed 1036s
+[12/12] blitz 38 plies, elapsed 1081s
+
+12 games, 865 positions. Reference = depth 20
+Reference blunders (>= 200cp): 95; mistakes+ (>= 100cp): 169
+
+depth | s/game | blunder recall | blunder precision | mistake+ recall | game ACPL MAE | ACPL (all)
+    6 |    0.3 |          68.4% |             61.9% |           78.1% |          12.1 | 80.0
+    8 |    0.3 |          77.9% |             74.7% |           75.7% |           9.3 | 80.6
+   10 |    0.5 |          83.2% |             68.7% |           78.7% |           9.1 | 82.9
+   12 |    2.1 |          83.2% |             79.8% |           81.1% |           8.7 | 79.4
+   14 |    9.8 |          91.6% |             90.6% |           87.6% |           5.1 | 78.4
+   16 |   27.3 |          93.7% |             95.7% |           89.9% |           4.8 | 78.6
+   18 |   48.0 |          95.8% |             95.8% |           95.3% |           1.9 | 78.6
+   20 |   90.0 |         100.0% |            100.0% |          100.0% |           0.0 | 79.2

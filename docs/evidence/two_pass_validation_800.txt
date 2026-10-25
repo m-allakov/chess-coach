@@ -1,0 +1,20 @@
+[1/14] 42 moves, 86s
+[2/14] 69 moves, 416s
+[3/14] 49 moves, 480s
+[4/14] 55 moves, 538s
+[5/14] 78 moves, 646s
+[6/14] 78 moves, 876s
+[7/14] 72 moves, 985s
+[8/14] 103 moves, 1103s
+[9/14] 66 moves, 1227s
+[10/14] 78 moves, 1336s
+[11/14] 48 moves, 1445s
+[12/14] 72 moves, 1506s
+[13/14] 67 moves, 1654s
+[14/14] 63 moves, 1755s
+
+14 games, 940 moves. Reference = depth 20
+reference mix: {'ok': 772, 'mistake': 27, 'inaccuracy': 72, 'blunder': 69}
+
+fast      | same class  90.1% | off by 2+  0.2% | blunder P 91.0% R 88.4% | mistake+ P 82.5% R 88.5%
+two-pass  | same class  92.2% | off by 2+  0.2% | blunder P 90.3% R 94.2% | mistake+ P 88.0% R 91.7%

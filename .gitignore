@@ -23,3 +23,17 @@ start_dashboard.bat
 
 # DB Browser for SQLite shortcuts (point at this machine's install)
 db-browser/
+
+# Local configuration and databases in any form
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+
+# Pre-public report (names the author's account and e-mail)
+PUBLISH_PREP.md

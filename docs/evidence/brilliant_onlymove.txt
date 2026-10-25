@@ -1,0 +1,22 @@
+417 candidates
+  50/417 19s
+  100/417 41s
+  150/417 70s
+  200/417 95s
+  250/417 126s
+  300/417 152s
+  350/417 179s
+  400/417 200s
+
+brilliants 39  look-alikes 378
+gap2   brilliant    6.1   look-alike    7.0
+gap3   brilliant    9.9   look-alike   11.1
+legal  brilliant   42.2   look-alike   38.9
+
+rule: gap to 2nd-best move >= X win-%
+  gap2>=0   flagged  406  found 38/39  precision  9.4%
+  gap2>=3   flagged  105  found 13/39  precision 12.4%
+  gap2>=5   flagged   86  found 10/39  precision 11.6%
+  gap2>=10  flagged   61  found  6/39  precision  9.8%
+  gap2>=15  flagged   49  found  4/39  precision  8.2%
+  gap2>=20  flagged   42  found  3/39  precision  7.1%

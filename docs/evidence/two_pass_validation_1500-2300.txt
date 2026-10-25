@@ -1,0 +1,21 @@
+372 analysed games rated 1500-2300
+[1/14] 49 moves, 56s
+[2/14] 30 moves, 135s
+[3/14] 33 moves, 177s
+[4/14] 47 moves, 237s
+[5/14] 37 moves, 436s
+[6/14] 54 moves, 570s
+[7/14] 70 moves, 742s
+[8/14] 54 moves, 1078s
+[9/14] 65 moves, 1164s
+[10/14] 109 moves, 1295s
+[11/14] 39 moves, 1348s
+[12/14] 53 moves, 1444s
+[13/14] 27 moves, 1526s
+[14/14] 54 moves, 1611s
+
+14 games, 721 moves. Reference = depth 20
+reference mix: {'ok': 583, 'inaccuracy': 61, 'mistake': 23, 'blunder': 54}
+
+fast      | same class  90.8% | off by 2+  0.6% | blunder P 89.3% R 92.6% | mistake+ P 90.7% R 88.3%
+two-pass  | same class  90.4% | off by 2+  0.4% | blunder P 94.4% R 94.4% | mistake+ P 88.2% R 87.0%
