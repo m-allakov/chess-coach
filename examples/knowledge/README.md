@@ -1,4 +1,4 @@
-# Example principles (DRAFT, author to review)
+# Example principles
 
 The coaching layer attaches short advice to each cause of a lost or drawn game. On my
 machine that advice comes from a larger set of principles written from chess books. That set is

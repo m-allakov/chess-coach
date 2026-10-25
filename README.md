@@ -84,7 +84,7 @@ flowchart LR
 advice comes from principles written from chess-training books. **That full set is kept private for
 copyright reasons.** This repository ships the code, the schema, a bibliography (titles and
 authors) and five [example principles](examples/knowledge). The examples are written in original
-wording and are marked as drafts. When the private set is absent, the code loads the examples.
+wording. When the private set is absent, the code loads the examples.
 
 ## Key engineering decisions
 

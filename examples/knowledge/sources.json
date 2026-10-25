@@ -1,10 +1,10 @@
 {
-  "note": "Source record for the example principles. DRAFT - author to review.",
+  "note": "Source record for the example principles.",
   "books": [
     {
       "key": "chess-coach-examples",
       "author": "chess-coach",
-      "title": "Example principles (DRAFT, author to review)"
+      "title": "Example principles"
     }
   ]
 }
