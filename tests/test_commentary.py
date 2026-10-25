@@ -1,6 +1,10 @@
 import pytest
 
 from chess_coach import commentary as c
+from chess_coach import principles
+
+needs_full_set = pytest.mark.skipif(not principles.has_full_set(),
+                                    reason="needs the private book-derived principle set")
 
 PLAN = {
     "weekly_focus": {"area": "thrown_win"},
@@ -11,6 +15,7 @@ PLAN = {
 PROFILE = {"games": 886, "material_or_mate_share": 0.46, "relaxed_clock_share": 0.92}
 
 
+@needs_full_set
 def test_advice_is_ordered_by_priority_and_names_its_source():
     items = c.advice_for("thrown_win", limit=3)
     # Priority 1 comes first; between equals the higher-confidence principle leads (lft-017 is "high", lft-010 "medium").
@@ -45,7 +50,12 @@ def test_the_template_commentary_is_faithful_and_cites_the_evidence():
     out = c.generate(PLAN, PROFILE)
     assert out["backend"] == "template" and out["faithfulness"]["ok"]
     assert "19 of your 52" in out["text"] and "46%" in out["text"] and "92%" in out["text"]
-    assert "Heisman" in out["text"] or "Dan Heisman" in out["text"]
+    assert c.advice_for("thrown_win")[0]["source"]["author"] in out["text"]
+
+
+@needs_full_set
+def test_the_template_commentary_names_the_book_author():
+    assert "Heisman" in c.generate(PLAN, PROFILE)["text"]
 
 
 @pytest.mark.parametrize("area", ["thrown_win", "blunder", "opening", "time", "gradual"])

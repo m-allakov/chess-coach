@@ -1,7 +1,7 @@
 """Validate principle files and (optionally) check them against the private source text.
 
-    python tools/validate_principles.py src/chess_coach/knowledge/principles/*.jsonl
-    python tools/validate_principles.py src/chess_coach/knowledge/principles/x.jsonl --against books_work/<slug>/book.md
+    python tools/validate_principles.py private/knowledge/principles/*.jsonl examples/knowledge/principles/*.jsonl
+    python tools/validate_principles.py private/knowledge/principles/x.jsonl --against books_work/<slug>/book.md
 
 With --against, any claim that shares a run of 8 or more consecutive words with the book is
 reported: claims must be in the project's own words. Exit status is non-zero on any problem.
@@ -10,7 +10,6 @@ reported: claims must be in the project's own words. Exit status is non-zero on 
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -28,8 +27,7 @@ def main() -> int:
     ap.add_argument("--run", type=int, default=8, help="shared-word-run length that counts as copying")
     args = ap.parse_args()
 
-    sources = json.loads((ROOT / "src/chess_coach/knowledge/sources.json").read_text(encoding="utf-8"))
-    books = {b["key"] for b in sources["books"]}
+    books = set(principles.sources())
     text = Path(args.against).read_text(encoding="utf-8") if args.against else None
     bad = 0
     for f in args.files:

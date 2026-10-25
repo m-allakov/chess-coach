@@ -1,12 +1,10 @@
 import json
-from pathlib import Path
 
 import pytest
 
 from chess_coach import principles as p
 
-ROOT = Path(__file__).resolve().parents[1]
-BOOKS = {b["key"] for b in json.loads((ROOT / "src/chess_coach/knowledge/sources.json").read_text(encoding="utf-8"))["books"]}
+BOOKS = set(p.sources())
 
 
 def good(**over):
@@ -67,8 +65,16 @@ def test_copy_check_catches_a_lifted_sentence_and_ignores_a_paraphrase():
     assert p.shared_run(own_words, SOURCE, 8) is None
 
 
-def test_every_shipped_principle_file_is_valid():
-    files = sorted((ROOT / "src/chess_coach/knowledge/principles").glob("*.jsonl"))
-    assert files, "the pilot principle file should exist"
+def test_the_example_principles_are_valid_and_cover_every_cause():
+    files = sorted((p.EXAMPLES_DIR / "principles").glob("*.jsonl"))
+    assert files, "the example principle file should exist"
     for f in files:
+        assert p.validate_file(f, BOOKS) == {}, f.name
+    covered = {c for f in files for r in p.load(f) for c in r.get("relevant_to", [])}
+    assert covered == p.CAUSES
+
+
+@pytest.mark.skipif(not p.has_full_set(), reason="needs the private book-derived principle set")
+def test_every_private_principle_file_is_valid():
+    for f in sorted((p.PRIVATE_DIR / "principles").glob("*.jsonl")):
         assert p.validate_file(f, BOOKS) == {}, f.name

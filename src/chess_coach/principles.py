@@ -2,7 +2,10 @@
 
 A principle is one JSON object per line (JSONL) with a fixed schema (see docs/pedagogy/SCHEMA.md).
 This module validates records, loads them, and checks that a claim does not copy a source text.
-The source books are private and are never read by this module unless a path is given."""
+The source books are private and are never read by this module unless a path is given.
+
+The full principle set written from the books is kept private too (private/knowledge/, not in the
+repository). When it is absent, the examples in examples/knowledge/ are loaded instead."""
 
 from __future__ import annotations
 
@@ -23,7 +26,10 @@ HOOKS = {
 }
 CAUSES = {"time", "thrown_win", "opening", "blunder", "gradual"}   # keep in step with coach.CAUSES
 MAX_ADVICE_WORDS = 40
-KNOWLEDGE_DIR = Path(__file__).with_name("knowledge")
+KNOWLEDGE_DIR = Path(__file__).with_name("knowledge")     # bibliography only
+_REPO = Path(__file__).resolve().parents[2]
+PRIVATE_DIR = _REPO / "private" / "knowledge"                 # full book-derived set, local only
+EXAMPLES_DIR = _REPO / "examples" / "knowledge"               # original examples, shipped
 MAX_CLAIM_WORDS = 60
 MAX_QUOTE_WORDS = 12
 ID_PATTERN = re.compile(r"^[a-z]{2,6}-\d{3}$")
@@ -133,15 +139,28 @@ def shared_run(claim: str, source_text: str, n: int = 8) -> str | None:
     return None
 
 
+def has_full_set() -> bool:
+    """True when this machine has the private book-derived principle set."""
+    return any((PRIVATE_DIR / "principles").glob("*.jsonl"))
+
+
+def principles_dir() -> Path:
+    """Where principles are loaded from: the private full set if present, else the examples."""
+    return (PRIVATE_DIR if has_full_set() else EXAMPLES_DIR) / "principles"
+
+
 def sources() -> dict[str, dict]:
-    """Bibliographic records by book key."""
-    data = json.loads((KNOWLEDGE_DIR / "sources.json").read_text(encoding="utf-8"))
-    return {b["key"]: b for b in data["books"]}
+    """Source records by key: the bibliography plus the examples' own source."""
+    out: dict[str, dict] = {}
+    for path in (KNOWLEDGE_DIR / "sources.json", EXAMPLES_DIR / "sources.json"):
+        if path.exists():
+            out.update({b["key"]: b for b in json.loads(path.read_text(encoding="utf-8"))["books"]})
+    return out
 
 
 def load_all() -> list[dict]:
-    """Every shipped principle, in file and line order."""
+    """Every principle in use (see principles_dir), in file and line order."""
     out: list[dict] = []
-    for f in sorted((KNOWLEDGE_DIR / "principles").glob("*.jsonl")):
+    for f in sorted(principles_dir().glob("*.jsonl")):
         out.extend(load(f))
     return out

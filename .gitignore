@@ -40,3 +40,6 @@ PUBLISH_PREP.md
 
 # Personal ground-truth list for the brilliant-move scripts (game ids of one player)
 scripts/chesscom_brilliants.txt
+
+# Full book-derived principle set: private study notes, kept out of the repo for copyright reasons
+private/

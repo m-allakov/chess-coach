@@ -1,6 +1,8 @@
 import chess
+import pytest
 
 from chess_coach import principle_tests as pt
+from chess_coach import principles
 from chess_coach.db import connect
 
 
@@ -42,6 +44,7 @@ def test_late_castlers_who_blunder_more_support_the_castling_principle():
     assert result["difference"]["change"] > 0
 
 
+@pytest.mark.skipif(not principles.has_full_set(), reason="needs the private book-derived principle set (am-024, am-010)")
 def test_report_attaches_the_advice_source_and_a_caveat():
     conn = connect(":memory:")
     rows = pt.report(conn, "me")
