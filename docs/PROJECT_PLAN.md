@@ -17,15 +17,19 @@ app makes is meant to be backed by ground truth and an evaluation.
 ## Layers
 1. **Analysis**: sync, two-pass Stockfish analysis, win-probability move grading (`analysis.py`, `classify.py`).
 2. **Reports**: causes of non-wins, trends with noise margins, openings, clock, tilt, peers (`coach.py`, `patterns.py`, `peers.py`).
-3. **Interfaces**: MCP server (`server.py`, 14 tools) and a local web dashboard with a game viewer and
+3. **Interfaces**: MCP server (`server.py`, 20 tools) and a local web dashboard with a game viewer and
    trainer (`web.py`, `web_static/`).
-4. **Knowledge** (planned): principles from coaching literature, in the project's own words, linked to
-   the data that can confirm or refute them.
-5. **Commentary** (planned): a `Commentator` interface with interchangeable backends (templates, a hosted
+4. **Knowledge** (partly built): principles from coaching literature, in the project's own words, linked to
+   the data that can confirm or refute them. Schema, validator, copy check and loader exist
+   (`principles.py`); the book-derived set is kept private, and the repository ships five example
+   principles (`examples/knowledge/`). Two principles have data tests (`principle_tests.py`).
+5. **Commentary** (partly built): a `Commentator` interface with interchangeable backends (templates, a hosted
    model API, a local model), compared by an evaluation harness for faithfulness to the supplied facts.
+   The interface, the template backend and the number-level faithfulness check exist (`commentary.py`);
+   no model backend and no evaluation harness yet.
 6. **Agent** (planned): a coach agent that calls the MCP tools, evaluated on scripted scenarios.
 
-## Knowledge pipeline (planned)
+## Knowledge pipeline (partly built)
 ```
 books (private, never committed) -> OCR / text extraction (local) -> Markdown per page
   -> distilled principles (own words, page references) -> data-backed validation
@@ -54,10 +58,11 @@ machine; every principle that makes a testable prediction gets an evaluation bef
 - Peer benchmarks (done): per rating band, 3+0 blitz, from public games.
 - chess.com brilliant labels (done, negative result): our rule cannot reproduce them; reported as such.
 - OCR accuracy (planned): scanned pages vs books that carry a clean text layer.
-- Commentary faithfulness (planned): every number, move and claim in generated text is checked against the facts supplied.
-- Principle tests (planned): do the book-derived predictions hold in the player's data?
+- Commentary faithfulness (partly done): every number in generated text is checked against the facts supplied; moves and claims are not checked yet.
+- Principle tests (partly done): do the book-derived predictions hold in the player's data? Two are implemented.
 
 ## Data and licensing notes
 - The author's games, opponents' public games, and the local analysis databases are not published.
 - Stockfish is GPL-licensed and is downloaded by the user, not redistributed.
-- Reference books are used for private study; they are not part of this repository.
+- Reference books are used for private study; they are not part of this repository, and neither is the
+  principle set written from them (kept in `private/knowledge/`, ignored by git).
