@@ -102,7 +102,7 @@ wording and are marked as drafts. When the private set is absent, the code loads
   it recovered 94.4% at 94.4% precision (721 moves, 1500 to 2300 rating)
   ([two_pass_validation_1500-2300.txt](docs/evidence/two_pass_validation_1500-2300.txt)).
 - *Not tuned yet:* the 80 cp cut-off and the depth-16 second pass were chosen by judgement, not
-  by a parameter sweep ([tuning issue](https://github.com/m-allakov/chess-coach/issues?q=is%3Aissue+%22Justify+the+two-pass%22)).
+  by a parameter sweep ([#6](https://github.com/m-allakov/chess-coach/issues/6)).
 
 **2. Grade moves by lost win chance, not raw centipawns.**
 - *Decision:* convert evaluations to win chance with Lichess' published logistic fit. Lost
@@ -113,7 +113,7 @@ wording and are marked as drafts. When the private set is absent, the code loads
   +900 changes nothing.
 - *Evidence:* the rationale is written in `classify.py`.
 - *Not tuned yet:* the 5/10/15 win-chance thresholds were chosen by judgement and have not been
-  tested against any reference (same [tuning issue](https://github.com/m-allakov/chess-coach/issues?q=is%3Aissue+%22Justify+the+two-pass%22)).
+  tested against any reference (same issue, [#6](https://github.com/m-allakov/chess-coach/issues/6)).
 
 **3. Facts come from code, words from a replaceable commentator, and the text is checked.**
 - *Decision:* reports return structured facts. Prose comes from a `Commentator` interface. Every
