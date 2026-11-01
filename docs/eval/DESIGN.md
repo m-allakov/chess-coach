@@ -27,16 +27,21 @@ Sonnet and Haiku, same effort (medium), same prompts, same MCP server and DB.
 Effort is held equal so the model is the only variable.
 
 ## Question set (10)
-1. TODO
-2. TODO
-3. TODO
-4. TODO
-5. TODO
-6. TODO
-7. TODO
-8. TODO
-9. TODO
-10. TODO
+Questions 1–9 are adapted from real player posts (chess.com forums, r/chess) so they can be
+answered from the player's own data.
+
+| # | Question | Source |
+|---|---|---|
+| 1 | I play hundreds of games but keep losing. What is the main reason, and what should I work on this week? | [Can someone help me with finding what I should improve on?](https://www.chess.com/forum/view/for-beginners/can-someone-help-me-with-finding-what-i-should-improve-on) |
+| 2 | Why can't I stop blundering? What kind of blunders do I make most? | [Why do I keep blundering?](https://www.chess.com/forum/view/general/why-do-i-keep-blundering-1) |
+| 3 | Why do I keep losing winning positions? | [Why Do I Keep Losing Winning Positions?](https://www.chess.com/forum/view/general/why-do-i-keep-losing-winning-positions) |
+| 4 | I'm losing more games with Black. Is that true, and which opening is the problem? | [im losing more games with black](https://www.chess.com/forum/view/for-beginners/im-losing-more-games-with-black) |
+| 5 | Do I play worse after losing a game? Should I stop after a loss? | [Why does our brain hate stopping on a loss, even when we know tilt will destroy our rating?](https://www.chess.com/forum/view/general/why-does-our-brain-hate-stopping-on-a-loss-even-when-we-know-tilt-will-destroy-our-rating) |
+| 6 | I keep running out of time. How many games do I lose on the clock, and where does my time go? | [I keep run out of time what should I do?](https://www.chess.com/forum/view/general/i-keep-run-out-of-time-what-should-i-do) |
+| 7 | How good am I compared to players at my rating? | [How good am I?](https://www.chess.com/forum/view/general/how-good-am-i) |
+| 8 | Pick apart my game <a not-won game with cause = time>: where did it go wrong? | [dropped from 900 to 700 in blitz in 2 months please pick apart my games and help me](https://www.chess.com/forum/view/game-analysis/dropped-from-900-to-700-in-blitz-in-2-months-please-pick-apart-my-games-and-help-me) |
+| 9 | Pick apart my game <a not-won game with cause = thrown_win>: where did it go wrong? | [dropped from 900 to 700 in blitz in 2 months please pick apart my games and help me](https://www.chess.com/forum/view/game-analysis/dropped-from-900-to-700-in-blitz-in-2-months-please-pick-apart-my-games-and-help-me) |
+| 10 | Am I better at classical chess than at blitz? | designed trap |
 
 ## Game set (20)
 4 not-won games per cause (thrown_win, blunder, time, opening, gradual), used by the
