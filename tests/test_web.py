@@ -135,6 +135,9 @@ def test_cached_reports_refresh_when_another_game_is_analysed(client):
     conn.execute("""INSERT INTO games VALUES ('https://www.chess.com/game/live/2','me',2,'blitz','180','chess',1,'white',
                     800,800,'win','')""")
     conn.execute("INSERT INTO game_analysis VALUES ('https://www.chess.com/game/live/2',12,16,0,1.0,2)")
+    # One move played, so the game has something to analyse (status ignores moveless games).
+    conn.executemany("INSERT INTO positions VALUES ('https://www.chess.com/game/live/2',?,'x',?,'opening',?,?,0,NULL,12)",
+                     [(0, "white", "e4", "e2e4"), (1, "black", None, None)])
     conn.commit()
     conn.close()
     assert client.get("/api/status").json()["games_analyzed"] == 2

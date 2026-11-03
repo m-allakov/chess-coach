@@ -94,3 +94,20 @@ def test_analyze_pending_goes_newest_first_and_is_resumable():
     second = analyze_pending(conn, MaterialEngine, "me", limit=5, workers=1)
     assert second["analyzed_now"] == 1 and second["games_pending"] == 0
     assert status(conn, "me")["games_analyzed"] == 3
+
+
+def test_status_ignores_a_game_in_which_no_move_was_played():
+    conn = connect(":memory:")
+    for n, (pgn, white, black) in enumerate(((BLUNDER_PGN, "win", "lose"),
+                                             ('[Event "t"]\n\n1/2-1/2', "agreed", "agreed"))):
+        raw = {
+            "url": f"https://x/{n}", "pgn": pgn, "end_time": 100 + n, "time_class": "bullet",
+            "time_control": "60", "rules": "chess", "rated": True,
+            "white": {"username": "me", "rating": 800, "result": white},
+            "black": {"username": "op", "rating": 800, "result": black},
+        }
+        insert_games(conn, "me", [game_row(raw, "me")])
+
+    analyze_pending(conn, MaterialEngine, "me", limit=5, workers=1)
+    assert conn.execute("SELECT COUNT(*) FROM game_analysis").fetchone()[0] == 2   # both were processed
+    assert status(conn, "me") == {"games_total": 1, "games_analyzed": 1, "games_pending": 0}

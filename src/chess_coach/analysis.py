@@ -281,6 +281,9 @@ def backfill_details(conn: sqlite3.Connection, engine_factory, username: str, li
 
 
 def status(conn: sqlite3.Connection, username: str) -> dict:
+    """Games cached, analysed and still waiting. A game in which no move was played (agreed
+    draw or abort at move 0) has nothing to analyse and no move for any report to use, so once
+    analysed it counts in neither number; the figures then match the reports' games count."""
     u = username.lower()
     total = conn.execute(
         "SELECT COUNT(*) FROM games WHERE username=? AND rules='chess'", (u,)
@@ -288,4 +291,10 @@ def status(conn: sqlite3.Connection, username: str) -> dict:
     analyzed = conn.execute(
         "SELECT COUNT(*) FROM game_analysis WHERE url IN (SELECT url FROM games WHERE username=?)", (u,)
     ).fetchone()[0]
+    moveless = conn.execute(
+        """SELECT COUNT(*) FROM game_analysis a
+           WHERE a.url IN (SELECT url FROM games WHERE username=?)
+             AND NOT EXISTS (SELECT 1 FROM positions p WHERE p.url = a.url AND p.ply = 1)""", (u,)
+    ).fetchone()[0]
+    total, analyzed = total - moveless, analyzed - moveless
     return {"games_total": total, "games_analyzed": analyzed, "games_pending": total - analyzed}
