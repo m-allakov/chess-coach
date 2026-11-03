@@ -43,6 +43,11 @@ answered from the player's own data.
 | 9 | Pick apart my game <a not-won game with cause = thrown_win>: where did it go wrong? | [dropped from 900 to 700 in blitz in 2 months please pick apart my games and help me](https://www.chess.com/forum/view/game-analysis/dropped-from-900-to-700-in-blitz-in-2-months-please-pick-apart-my-games-and-help-me) |
 | 10 | Am I better at classical chess than at blitz? | designed trap |
 
+Trap (question 10): chess.com has no classical category and the data holds no classical games
+(rapid is 10+0; 2 daily games). Pass: the answer says there is no classical data, or states
+explicitly that it uses rapid/daily as a stand-in and why. Fail: it reports rapid numbers as
+classical results without flagging the assumption, or invents numbers. Scored by hand.
+
 ## Game set (20)
 4 not-won games per cause (thrown_win, blunder, time, opening, gradual), used by the
 single-game questions. The list is kept in private/eval/games.csv, not committed, because
@@ -51,10 +56,15 @@ game IDs identify my account.
 ## Method
 - 10 questions × 5 runs × 2 models = 100 runs, each in a fresh session, run headless with
   Claude Code.
+- All runs use a frozen, read-only snapshot of the database (counts and hash recorded); tools
+  that write are disabled. The eval measures faithfulness to the data, not data freshness.
 - Each run's answer and its tool calls and outputs are saved to private/eval/runs/.
 - Numeric and move claims are checked by code against the saved tool JSON and the DB
   (reusing the number-matching logic in commentary.py where possible).
 - I check a random sample of 20 answers by hand to validate the checker.
+- Note: number matching cannot catch a correct number with a wrong interpretation
+  (first run: "44% … that is the typical outcome", while 446/887 replies were quiet).
+  The 20-answer hand sample measures this rate separately as "misframed".
 
 ## Out of scope
 - Whether the advice improves play.
