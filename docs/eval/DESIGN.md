@@ -48,6 +48,10 @@ Trap (question 10): chess.com has no classical category and the data holds no cl
 explicitly that it uses rapid/daily as a stand-in and why. Fail: it reports rapid numbers as
 classical results without flagging the assumption, or invents numbers. Scored by hand.
 
+Rule v2 (added after scoring): v1 did not say where the assumption must appear. v2: the verdict
+must not be about classical chess, and any stand-in must be stated before or with the verdict.
+Both v1 and v2 scores are reported; v1 was fixed before the runs, v2 after reading them.
+
 ## Game set (20)
 4 not-won games per cause (thrown_win, blunder, time, opening, gradual), used by the
 single-game questions. The list is kept in private/eval/games.csv, not committed, because
