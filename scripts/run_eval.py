@@ -55,7 +55,7 @@ MAX_CONSECUTIVE_FAILURES = 3
 
 # Matched against the result text and stderr of a failed run.
 _NOT_LOGGED_IN = re.compile(r"not logged in|please run /login|invalid api key|authentication", re.I)
-_USAGE_LIMIT = re.compile(r"usage limit|limit reached|rate.?limit|quota|resets? (at|in)|too many requests|\b429\b", re.I)
+_USAGE_LIMIT = re.compile(r"usage limit|spend limit|limit reached|rate.?limit|quota|resets? (at|in)|too many requests|\b429\b", re.I)
 
 
 # ---- questions ---------------------------------------------------------------------------
